@@ -1,0 +1,8 @@
+tunnel: 7065b378-20b4-4d54-abd0-6c1f761dced6
+credentials-file: /etc/cloudflared/7065b378-20b4-4d54-abd0-6c1f761dced6.json
+ingress:
+  - hostname: face.face-recognition-system-36.me
+    service: http://nginx:80
+  - hostname: admin.face-recognition-system-36.me
+    service: http://nginx:80
+  - service: http_status:404

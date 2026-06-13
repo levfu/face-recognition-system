@@ -1,0 +1,240 @@
+services:
+
+  # ─────────────────────────────────────────────
+  #  HẠ TẦNG
+  # ─────────────────────────────────────────────
+
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: facerecog
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      TZ: Asia/Ho_Chi_Minh
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d facerecog"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+  qdrant:
+    image: qdrant/qdrant:v1.9.2
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────
+  #  BACKEND (FastAPI)
+  # ─────────────────────────────────────────────
+
+  backend:
+    build:
+      context: ./backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+      minio:
+        condition: service_started
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./models:/app/models
+      - ./scripts:/scripts:ro
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: facerecog
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      QDRANT_HOST: qdrant
+      QDRANT_PORT: 6333
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin123
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      MODEL_PATH: /app/models/best_model.pth
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-here}
+      TZ: Asia/Ho_Chi_Minh
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────
+  #  CELERY WORKER (xử lý task bất đồng bộ)
+  # ─────────────────────────────────────────────
+
+  worker:
+    build:
+      context: ./backend
+    command: celery -A app.workers.celery_tasks worker --loglevel=info -Q celery,enroll,maintenance
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+      minio:
+        condition: service_started
+    volumes:
+      - ./backend:/app
+      - ./models:/app/models
+      # Thư mục trên máy host — đổi bằng BACKUP_HOST_DIR trong .env (vd. D:/Backups/facerecog)
+      - ${BACKUP_HOST_DIR:-./backups}:/backups
+      - ./scripts:/scripts:ro
+      - ./secrets:/secrets
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: facerecog
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      QDRANT_HOST: qdrant
+      QDRANT_PORT: 6333
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin123
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      MODEL_PATH: /app/models/best_model.pth
+      BACKUP_ENABLED: ${BACKUP_ENABLED:-true}
+      BACKUP_DIR: /backups
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+      BACKUP_INCLUDE_MINIO: ${BACKUP_INCLUDE_MINIO:-false}
+      GOOGLE_DRIVE_ENABLED: ${GOOGLE_DRIVE_ENABLED:-false}
+      GOOGLE_DRIVE_AUTH_MODE: ${GOOGLE_DRIVE_AUTH_MODE:-oauth}
+      GOOGLE_DRIVE_FOLDER_ID: ${GOOGLE_DRIVE_FOLDER_ID:-}
+      GOOGLE_DRIVE_CREDENTIALS: ${GOOGLE_DRIVE_CREDENTIALS:-/secrets/gdrive-service-account.json}
+      GOOGLE_DRIVE_OAUTH_TOKEN: ${GOOGLE_DRIVE_OAUTH_TOKEN:-/secrets/gdrive-oauth-token.json}
+      TZ: Asia/Ho_Chi_Minh
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────
+  #  CELERY BEAT (lịch chạy tự động)
+  # ─────────────────────────────────────────────
+
+  beat:
+    build:
+      context: ./backend
+    command: celery -A app.workers.celery_tasks beat --loglevel=info
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - ./models:/app/models
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: facerecog
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      QDRANT_HOST: qdrant
+      QDRANT_PORT: 6333
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin123
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      MODEL_PATH: /app/models/best_model.pth
+      TZ: Asia/Ho_Chi_Minh
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────
+  #  FRONTEND USER
+  # ─────────────────────────────────────────────
+
+  frontend-user:
+    build:
+      context: ./frontend-user
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────
+  #  FRONTEND ADMIN
+  # ─────────────────────────────────────────────
+
+  frontend-admin:
+    build:
+      context: ./frontend-admin
+    depends_on:
+      - backend
+    ports:
+      - "5174:80"
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────
+  #  NGINX (reverse proxy)
+  # ─────────────────────────────────────────────
+
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
+      - frontend-user
+      - frontend-admin
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────
+  #  CLOUDFLARE TUNNEL
+  # ─────────────────────────────────────────────
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --config /etc/cloudflared/config.yml run
+    volumes:
+      - ./cloudflare:/etc/cloudflared:ro
+    depends_on:
+      - nginx
+    restart: unless-stopped
+  
+
+# ─────────────────────────────────────────────
+#  VOLUMES KẾT THÚC
+# ─────────────────────────────────────────────
+volumes:
+  postgres_data:
+  qdrant_data:
+  minio_data:

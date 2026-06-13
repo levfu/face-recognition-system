@@ -1,0 +1,409 @@
+:root {
+  --bg:        #f8fafc;
+  --surface:   #ffffff;
+  --surface-2: #f1f5f9;
+  --border:    #e2e8f0;
+  --text:      #0f172a;
+  --text-dim:  #64748b;
+  --accent:    #10b981;
+  --accent-dark: #059669;
+  --danger:    #ef4444;
+  --warning:   #f59e0b;
+  --radius:    12px;
+  --radius-sm: 8px;
+  --shadow:    0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.05);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* ── Layout ── */
+.app-layout {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 20px;
+  padding: 20px;
+  align-items: start;
+}
+
+.camera-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: var(--shadow);
+}
+
+.camera-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.camera-section h1 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+
+.clock-display { text-align: right; margin-top: 4px; }
+
+.clock-time {
+  font-size: 24px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  letter-spacing: 0.01em;
+  line-height: 1.1;
+}
+
+.clock-date {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+.log-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+
+/* ── Status Badge ── */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--surface-2);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  width: fit-content;
+}
+
+.status-badge::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  flex-shrink: 0;
+}
+
+.badge--connecting::before { background: var(--warning); }
+
+.badge--connected {
+  color: var(--accent);
+  border-color: rgba(16, 185, 129, 0.4);
+  background: rgba(16, 185, 129, 0.08);
+}
+.badge--connected::before { background: var(--accent); }
+
+.badge--error {
+  color: var(--danger);
+  border-color: rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.08);
+}
+.badge--error::before { background: var(--danger); }
+
+/* ── Video Stage ── */
+.video-stage {
+  position: relative;
+  width: min(100%, calc(65vh * 16 / 9));
+  max-height: 65vh;
+  margin-inline: auto;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: #000;
+  border: 1px solid var(--border);
+}
+
+.video-layer,
+.overlay-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.overlay-layer { pointer-events: none; }
+
+/* ── Oval Guide ── */
+.face-oval-guide {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 30%;
+  height: 72%;
+  border: 3px solid rgba(16, 185, 129, 0.82);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 5;
+  box-shadow:
+    0 0 18px rgba(16, 185, 129, 0.30),
+    0 0 6px rgba(16, 185, 129, 0.20);
+}
+
+/* ── Zone Hint ── */
+.zone-hint {
+  display: block;
+  width: fit-content;
+  margin: 8px auto 0;
+  background: rgba(0, 0, 0, 0.72);
+  color: #ffc107;
+  padding: 8px 18px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* ── Recognition Animations ── */
+@keyframes enterSuccess {
+  0%   { opacity: 0; transform: translateY(8px) scale(1); }
+  60%  { opacity: 1; transform: translateY(0)   scale(1.02); }
+  100% { opacity: 1; transform: translateY(0)   scale(1); }
+}
+@keyframes shakeX {
+  0%, 100% { transform: translateX(0); }
+  20%      { transform: translateX(-4px); }
+  40%      { transform: translateX(4px); }
+  60%      { transform: translateX(-3px); }
+  80%      { transform: translateX(3px); }
+}
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+.anim-enter-success { animation: enterSuccess 280ms ease-out forwards; }
+.anim-shake         { animation: shakeX      320ms ease-in-out; }
+.anim-fade-out      { animation: fadeOut     200ms ease-out forwards; }
+
+/* ── Recognition Card ── */
+.recognition-card {
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  border: 1px solid var(--border);
+  transition: background 200ms ease, border-color 200ms ease;
+}
+
+.recognition-idle {
+  background: var(--surface-2);
+  color: var(--text-dim);
+}
+
+.recognition-idle p {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.recognition-success {
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.45);
+}
+
+.recognition-checkedin {
+  background: rgba(14, 165, 233, 0.06);
+  border-color: rgba(14, 165, 233, 0.30);
+}
+
+.recognition-unknown {
+  background: rgba(239, 68, 68, 0.06);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: var(--danger);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.recognition-pending {
+  background: rgba(245, 158, 11, 0.07);
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+.recognition-spoof {
+  background: rgba(220, 38, 38, 0.07);
+  border-color: rgba(220, 38, 38, 0.35);
+}
+
+.result-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--accent);
+  opacity: 0.85;
+  margin-bottom: 6px;
+}
+
+.result-name {
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.result-meta {
+  margin-top: 10px;
+  display: flex;
+  gap: 18px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+/* ── Access Log ── */
+.access-log-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.access-log-card h2 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.log-empty {
+  font-size: 14px;
+  color: var(--text-dim);
+}
+
+.log-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.log-list li {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: background 150ms;
+}
+
+.log-list li:hover { background: var(--surface-2); }
+
+.log-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+.log-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.log-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.log-time {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+/* ── Segmented Action Control ── */
+.action-toggle-wrap {
+  display: inline-flex;
+  padding: 2px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.action-btn {
+  padding: 4px 16px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: background 180ms ease, color 180ms ease;
+  background: transparent;
+  color: #64748b;
+}
+
+.action-btn:hover {
+  color: #334155;
+}
+
+.action-btn--active {
+  background: var(--accent);
+  color: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* ── Result: Check-out success ── */
+.recognition-checkout-success {
+  background: rgba(245, 158, 11, 0.08);
+  border-color: rgba(245, 158, 11, 0.45);
+}
+
+.recognition-checkout-success .result-label {
+  color: #b45309;
+}
+
+.recognition-checkout-success .result-name {
+  color: #d97706;
+}
+
+/* ── Result: Already checked out / No check-in ── */
+.recognition-already-out {
+  background: rgba(245, 158, 11, 0.06);
+  border-color: rgba(245, 158, 11, 0.30);
+}
+
+.recognition-no-checkin {
+  background: rgba(239, 68, 68, 0.06);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: var(--danger);
+}
+
+@media (max-width: 1024px) {
+  .app-layout { grid-template-columns: 1fr; }
+}
