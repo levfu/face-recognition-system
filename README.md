@@ -239,7 +239,6 @@ Cloudflare tự cấp SSL Let's Encrypt — không cần config certbot.
 ├── frontend-admin/         # Giao diện quản trị (React + Vite)
 ├── nginx/                  # Cấu hình reverse proxy
 ├── models/                 # Trọng số AI (best_model.pth, face_landmarker.task)
-│                           # → xem chi tiết trong models/README.md
 ├── scripts/                # Backup utilities + offline data prep
 ├── docs/                   # Tài liệu bổ sung (BACKUP_GOOGLE_DRIVE.md)
 ├── secrets/                # Service account JSON (gitignored)
