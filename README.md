@@ -235,12 +235,12 @@ Cloudflare tự cấp SSL Let's Encrypt — không cần config certbot.
 │   ├── app/                # Source code (api, core, db, services, workers)
 │   ├── tests/              # Pytest test suite
 │   └── Dockerfile
-├── frontend-user/          # Giao diện Kiosk (React + Vite)
+├── cloudflare              # Triển khai lên Internet bằng Cloudflare
 ├── frontend-admin/         # Giao diện quản trị (React + Vite)
-├── nginx/                  # Cấu hình reverse proxy
+├── frontend-user/          # Giao diện Kiosk (React + Vite)
 ├── models/                 # Trọng số AI (best_model.pth, face_landmarker.task)
+├── nginx/                  # Cấu hình reverse proxy
 ├── scripts/                # Backup utilities + offline data prep
-├── docs/                   # Tài liệu bổ sung (BACKUP_GOOGLE_DRIVE.md)
 ├── secrets/                # Service account JSON (gitignored)
 ├── docker-compose.yml      # Cấu hình triển khai (CPU)
 ├── docker-compose.gpu.yml  # Lớp phủ tùy chọn cho GPU
