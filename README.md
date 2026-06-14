@@ -204,28 +204,168 @@ Nếu bạn muốn tùy chỉnh cấu hình, hãy sao chép `.env.example` thàn
 - Các thông tin kết nối CSDL và dịch vụ khác
 - Các biến liên quan đến backup như `BACKUP_HOST_DIR`, `BACKUP_RETENTION_DAYS`, `BACKUP_INCLUDE_MINIO`
 
-## Triển khai ra Internet
+## Triển khai ra Internet với Cloudflare Tunnel 
 
-Hệ thống tích hợp **Cloudflare Tunnel** (service `cloudflared`) để expose Kiosk + Admin ra Internet **không cần mở port public**, SSL miễn phí tự động.
+Dùng Cloudflare Tunnel thay vì mở port — **không cần public IP, không cần VPS**, chạy trên máy local vẫn truy cập được qua Internet với SSL miễn phí.
 
-### Cài đặt nhanh
+### Kiến trúc
 
-1. **Tạo tunnel** trên Cloudflare Zero Trust → Networks → Tunnels → copy token
-2. **Thêm vào `.env`**:
-```env
-CLOUDFLARED_TOKEN=<token-từ-Cloudflare>
 ```
-3. **Cấu hình route** trong Cloudflare dashboard:
-   - `kiosk.your-domain.com` → `http://nginx:80`
-   - `admin.your-domain.com` → `http://frontend-admin:5174`
-4. **Khởi động**:
+Internet
+  │
+  ▼
+Cloudflare Edge (SSL tự động)
+  │
+  ▼  (qua tunnel mã hóa)
+cloudflared container
+  │
+  ▼
+nginx:80 (reverse proxy)
+  ├── /api/  → backend:8000
+  ├── /ws/   → backend:8000 (WebSocket)
+  ├── /admin/→ frontend-admin:80
+  └── /      → frontend-user:80
+```
+
+---
+
+### Bước 1 — Chuẩn bị Cloudflare
+
+1. Đăng ký tài khoản tại [cloudflare.com](https://cloudflare.com) (miễn phí)
+2. Thêm domain vào Cloudflare (mua tại Cloudflare hoặc dùng domain có sẵn)
+3. Cài `cloudflared` trên máy host:
+
 ```bash
-docker compose up -d cloudflared
+# Ubuntu/Debian
+curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb -o cloudflared.deb
+sudo dpkg -i cloudflared.deb
+
+# Kiểm tra
+cloudflared --version
 ```
 
-Cloudflare tự cấp SSL Let's Encrypt — không cần config certbot.
+---
 
-> Tip: dùng domain con (subdomain) bạn đã add vào Cloudflare. Nếu chưa có domain, bạn có thể test bằng Cloudflare Quick Tunnel (random URL `.trycloudflare.com`).
+### Bước 2 — Tạo tunnel và lấy credentials
+
+```bash
+# Đăng nhập Cloudflare (mở browser tự động)
+cloudflared tunnel login
+
+# Tạo tunnel
+cloudflared tunnel create face-recognition
+```
+
+Lệnh tạo tunnel sẽ in ra:
+```
+Tunnel credentials written to /root/.cloudflared/<TUNNEL_ID>.json
+Created tunnel face-recognition with id <TUNNEL_ID>
+```
+
+> ⚠️ **Lưu lại `TUNNEL_ID`** — cần dùng ở bước tiếp theo.
+
+---
+
+### Bước 3 — Cấu hình tunnel
+
+Tạo file `cloudflare/config.yml`:
+
+```yaml
+tunnel: <TUNNEL_ID>
+credentials-file: /root/.cloudflared/<TUNNEL_ID>.json
+
+ingress:
+  # User frontend
+  - hostname: face.yourdomain.com
+    service: http://nginx:80
+
+  # Admin frontend
+  - hostname: admin.face.yourdomain.com
+    service: http://nginx:80
+
+  # Catch-all
+  - service: http_status:404
+```
+
+> 💡 Cả 2 hostname đều trỏ về `nginx:80`. Nginx sẽ phân route dựa trên **path** (`/admin/` vs `/`).
+
+---
+
+### Bước 4 — Cấu hình DNS trên Cloudflare dashboard
+
+Vào **Cloudflare dashboard → DNS → Add record**, thêm 2 CNAME:
+
+| Type | Name | Target | Proxy |
+|---|---|---|---|
+| CNAME | face | `<TUNNEL_ID>.cfargotunnel.com` | ✅ ON (màu cam) |
+| CNAME | admin.face | `<TUNNEL_ID>.cfargotunnel.com` | ✅ ON (màu cam) |
+
+> ⚠️ Proxy phải **ON** — bắt buộc để có SSL tự động.
+
+---
+
+### Bước 5 — Docker Compose
+
+`cloudflared` đã được khai báo trong `docker-compose.yml`:
+
+```yaml
+cloudflared:
+  image: cloudflare/cloudflared:latest
+  command: tunnel --config /etc/cloudflared/config.yml run
+  volumes:
+    - ./cloudflare/config.yml:/etc/cloudflared/config.yml
+    - ~/.cloudflared:/root/.cloudflared:ro   # thư mục chứa credentials JSON
+  depends_on:
+    - nginx
+  restart: unless-stopped
+```
+
+> ⚠️ Thư mục `~/.cloudflared/` trên máy host phải chứa file `<TUNNEL_ID>.json` (được tạo ở Bước 2). File này **không commit lên GitHub**.
+
+---
+
+### Bước 6 — Khởi động
+
+```bash
+docker compose up -d
+
+# Kiểm tra tunnel đã kết nối chưa
+docker compose logs -f cloudflared
+```
+
+Log bình thường:
+```
+cloudflared | Registered tunnel connection connIndex=0
+cloudflared | Registered tunnel connection connIndex=1
+```
+
+---
+
+### Bước 7 — Kiểm tra
+
+```bash
+# API health check
+curl https://face.yourdomain.com/api/health
+
+# User frontend
+open https://face.yourdomain.com
+
+# Admin frontend
+open https://admin.face.yourdomain.com
+```
+
+---
+
+### Lưu ý bảo mật
+
+Thêm vào `.gitignore`:
+```
+.cloudflared/
+```
+
+Không commit `~/.cloudflared/<TUNNEL_ID>.json` lên GitHub — file này chứa credentials cho phép điều khiển tunnel.
+
+SSL được Cloudflare cung cấp tự động — **không cần cài certbot hay Let's Encrypt**.
 
 ## Cấu trúc dự án
 
@@ -250,76 +390,136 @@ Cloudflare tự cấp SSL Let's Encrypt — không cần config certbot.
 
 ## Sao lưu dữ liệu định kỳ
 
-Hệ thống tự động tạo backup vào lúc **03:00 mỗi ngày** thông qua Celery Beat, sau đó chạy tác vụ dọn snapshot vào lúc **02:00**.
+Hệ thống backup tự động được tích hợp sẵn trong backend, chạy hàng ngày qua Celery Beat.
 
-### Nội dung backup
+### Những gì được backup
 
-| Thành phần | Nội dung backup |
-|------------|-----------------|
-| PostgreSQL | `postgres.dump` (pg_dump custom format) |
-| Qdrant | Snapshot collection embedding |
-| MinIO | Toàn bộ bucket ảnh khuôn mặt + snapshot |
+| Thành phần | Nội dung | Bắt buộc |
+|---|---|---|
+| PostgreSQL | Toàn bộ schema + data (employees, logs, admins) | ✅ Luôn backup |
+| Qdrant | Snapshot collection `face_embeddings` (embeddings 512D) | ✅ Luôn backup |
+| MinIO | Bucket `face-images` + `snapshots` (ảnh gốc) | ⚙️ Tùy cấu hình |
 
-### Vị trí lưu trữ
+> ⚠️ **MinIO backup mặc định TẮT** (`BACKUP_INCLUDE_MINIO=false`). Lý do: ảnh gốc đã được lưu trong Docker volume `minio_data` — backup volume Docker là đủ. Bật khi cần backup ảnh sang nơi khác.
 
-Backup được lưu trên máy host theo biến `BACKUP_HOST_DIR`. Mặc định là `./backups` trong repo.
+---
 
+### Cấu hình
+
+Thêm vào `.env`:
+
+```env
+# ── Backup cơ bản ──
+BACKUP_ENABLED=true
+BACKUP_DIR=/app/backups
+BACKUP_RETENTION_DAYS=30      # giữ backup tối đa 30 ngày
+
+# ── MinIO backup (tùy chọn) ──
+BACKUP_INCLUDE_MINIO=false    # true nếu muốn backup ảnh gốc
+
+# ── Google Drive upload (tùy chọn) ──
+GDRIVE_ENABLED=false
+GDRIVE_AUTH_MODE=oauth        # oauth | service_account
+GDRIVE_FOLDER_ID=             # ID folder trên Google Drive
 ```
-<BACKUP_HOST_DIR>/
-  20260521_030000/
-    manifest.json
-    postgres.dump
-    qdrant_face_embeddings.snapshot
-    minio/
-      face-images/...
-      snapshots/...
-```
 
-### Tùy chỉnh backup
+---
 
-Bạn có thể chỉnh các biến môi trường sau trong `.env`:
+### Lịch chạy
 
-- `BACKUP_ENABLED` — bật/tắt backup (mặc định `true`)
-- `BACKUP_HOST_DIR` — thư mục lưu backup trên máy host (mặc định `./backups`)
-- `BACKUP_DIR` — đường dẫn trong container (mặc định `/backups`)
-- `BACKUP_RETENTION_DAYS` — số ngày giữ bản backup (khuyến nghị `3`–`7` nếu ổ đĩa hạn chế)
-- `BACKUP_INCLUDE_MINIO` — `false` để không copy ảnh vào backup, `true` để sao chép đầy đủ ảnh
+| Task | Thời gian | Chức năng |
+|---|---|---|
+| `full_backup_task` | 2:00 AM hàng ngày | Backup Postgres + Qdrant + MinIO (nếu bật) |
+| `cleanup_task` | 2:00 AM hàng ngày | Xóa snapshot ảnh cũ hơn 30 ngày trong MinIO |
+| `daily_report_task` | 23:59 hàng ngày | Tổng hợp chấm công trong ngày |
 
-### Chạy backup ngay
+---
+
+### Upload lên Google Drive (tùy chọn)
+
+Hỗ trợ 2 chế độ xác thực:
+
+#### Cách A — OAuth (Gmail cá nhân, khuyến nghị)
+
+Dùng khi không có Google Workspace. Backup lưu vào Google Drive cá nhân.
 
 ```bash
-docker compose exec worker celery -A app.workers.celery_tasks call backup_task
-# hoặc
-
-docker compose exec worker python /scripts/run_backup.py
+# Chạy 1 lần để lấy OAuth token
+python scripts/gdrive_oauth_setup.py
 ```
 
-### Khôi phục từ backup
+Cấu hình `.env`:
+```env
+GDRIVE_ENABLED=true
+GDRIVE_AUTH_MODE=oauth
+GDRIVE_OAUTH_TOKEN_PATH=./secrets/gdrive_oauth_token.json
+GDRIVE_FOLDER_ID=<ID_folder_Google_Drive>
+```
 
-> Nên dừng traffic API trước khi khôi phục để tránh xung đột dữ liệu.
+#### Cách B — Service Account (Google Workspace)
+
+Dùng khi có Google Workspace với Shared Drive.
 
 ```bash
-docker compose exec worker python /scripts/restore_backup.py /backups/20260521_030000 -y
+# Tạo Service Account tại Google Cloud Console
+# Tải file JSON credentials về
 ```
 
-### Xóa backup thủ công
-
-Trên Windows, bạn có thể xóa hẳn thư mục backup hoặc xóa toàn bộ:
-
-```powershell
-Remove-Item -Recurse -Force .\backups\*
+Cấu hình `.env`:
+```env
+GDRIVE_ENABLED=true
+GDRIVE_AUTH_MODE=service_account
+GDRIVE_CREDENTIALS_PATH=./secrets/gdrive-service-account.json
+GDRIVE_FOLDER_ID=<ID_Shared_Drive>
 ```
 
-### Backup lên Google Drive
+> ⚠️ **Lưu ý**: Service Account với Google Drive cá nhân sẽ báo lỗi quota (quota = 0). Phải dùng Shared Drive hoặc chuyển sang OAuth.
 
-Nếu muốn sao lưu ngoài máy, có thể upload tự động file `facerecog_backup_*.tar.gz` lên Google Drive sau mỗi lần backup local.
+---
 
-1. Tạo Service Account và bật Drive API trên Google Cloud
-2. Chia sẻ folder Drive cho email của Service Account (Editor)
-3. Đặt JSON vào `secrets/gdrive-service-account.json`
-4. Cấu hình `.env`:
-   - `GOOGLE_DRIVE_ENABLED=true`
-   - `GOOGLE_DRIVE_FOLDER_ID=...`
+### Kết quả backup
+
+Mỗi lần backup tạo ra 1 thư mục theo timestamp:
+
+```
+/app/backups/
+└── 20241201_020000/
+    ├── postgres.dump              # pg_dump format custom (-Fc)
+    ├── qdrant_face_embeddings.snapshot   # Qdrant snapshot
+    ├── minio/                     # (chỉ có nếu BACKUP_INCLUDE_MINIO=true)
+    │   ├── face-images/
+    │   └── snapshots/
+    └── manifest.json              # metadata: thời gian, kích thước, cấu hình
+```
+
+Nếu `GDRIVE_ENABLED=true`, thư mục được nén thành `.tar.gz` và upload lên Google Drive. Backup cũ hơn `BACKUP_RETENTION_DAYS` ngày tự động bị xóa cả local lẫn Drive.
+
+---
+
+### Restore
+
+```bash
+# Restore PostgreSQL
+docker compose exec postgres pg_restore \
+  -U admin -d facerecog -Fc \
+  /path/to/postgres.dump
+
+# Restore Qdrant
+curl -X POST "http://localhost:6333/collections/face_embeddings/snapshots/upload" \
+  -H "Content-Type: multipart/form-data" \
+  -F "snapshot=@/path/to/qdrant_face_embeddings.snapshot"
+```
+
+---
+
+### Kích hoạt backup thủ công
+
+```bash
+# Chạy backup ngay lập tức (không cần chờ 2AM)
+curl -X POST http://localhost:8000/api/admin/backup/run \
+  -H "Authorization: Bearer <token>"
+```
+
 
 ## Dừng hệ thống
 
