@@ -297,8 +297,8 @@ Vào **Cloudflare dashboard → DNS → Add record**, thêm 2 CNAME:
 
 | Type | Name | Target | Proxy |
 |---|---|---|---|
-| CNAME | face | `<TUNNEL_ID>.cfargotunnel.com` | ✅ ON (màu cam) |
-| CNAME | admin.face | `<TUNNEL_ID>.cfargotunnel.com` | ✅ ON (màu cam) |
+| CNAME | face | `<TUNNEL_ID>.cfargotunnel.com` |  ON (màu cam) |
+| CNAME | admin.face | `<TUNNEL_ID>.cfargotunnel.com` |  ON (màu cam) |
 
 > ⚠️ Proxy phải **ON** — bắt buộc để có SSL tự động.
 
@@ -396,9 +396,9 @@ Hệ thống backup tự động được tích hợp sẵn trong backend, chạ
 
 | Thành phần | Nội dung | Bắt buộc |
 |---|---|---|
-| PostgreSQL | Toàn bộ schema + data (employees, logs, admins) | ✅ Luôn backup |
-| Qdrant | Snapshot collection `face_embeddings` (embeddings 512D) | ✅ Luôn backup |
-| MinIO | Bucket `face-images` + `snapshots` (ảnh gốc) | ⚙️ Tùy cấu hình |
+| PostgreSQL | Toàn bộ schema + data (employees, logs, admins) |  Luôn backup |
+| Qdrant | Snapshot collection `face_embeddings` (embeddings 512D) | = Luôn backup |
+| MinIO | Bucket `face-images` + `snapshots` (ảnh gốc) |  Tùy cấu hình |
 
 > ⚠️ **MinIO backup mặc định TẮT** (`BACKUP_INCLUDE_MINIO=false`). Lý do: ảnh gốc đã được lưu trong Docker volume `minio_data` — backup volume Docker là đủ. Bật khi cần backup ảnh sang nơi khác.
 
