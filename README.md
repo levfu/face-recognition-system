@@ -204,6 +204,27 @@ Nếu bạn muốn tùy chỉnh cấu hình, hãy sao chép `.env.example` thàn
 - Các thông tin kết nối CSDL và dịch vụ khác
 - Các biến liên quan đến backup như `BACKUP_HOST_DIR`, `BACKUP_RETENTION_DAYS`, `BACKUP_INCLUDE_MINIO`
 
+## Cấu trúc dự án
+
+```
+.
+├── backend/                # Dịch vụ FastAPI + lõi AI
+│   ├── app/                # Source code (api, core, db, services, workers)
+│   ├── tests/              # Pytest test suite
+│   └── Dockerfile
+├── cloudflare              # Triển khai lên Internet bằng Cloudflare
+├── frontend-admin/         # Giao diện quản trị (React + Vite)
+├── frontend-user/          # Giao diện Kiosk (React + Vite)
+├── models/                 # Trọng số AI (best_model.pth, face_landmarker.task)
+├── nginx/                  # Cấu hình reverse proxy
+├── scripts/                # Backup utilities + offline data prep
+├── secrets/                # Service account JSON (gitignored)
+├── docker-compose.yml      # Cấu hình triển khai (CPU)
+├── docker-compose.gpu.yml  # Lớp phủ tùy chọn cho GPU
+├── start.bat / start.sh    # Script khởi động tự dò GPU
+└── .env.example            # Mẫu biến môi trường
+```
+
 ## Triển khai ra Internet với Cloudflare Tunnel 
 
 Dùng Cloudflare Tunnel thay vì mở port — **không cần public IP, không cần VPS**, chạy trên máy local vẫn truy cập được qua Internet với SSL miễn phí.
@@ -367,26 +388,7 @@ Không commit `~/.cloudflared/<TUNNEL_ID>.json` lên GitHub — file này chứa
 
 SSL được Cloudflare cung cấp tự động — **không cần cài certbot hay Let's Encrypt**.
 
-## Cấu trúc dự án
 
-```
-.
-├── backend/                # Dịch vụ FastAPI + lõi AI
-│   ├── app/                # Source code (api, core, db, services, workers)
-│   ├── tests/              # Pytest test suite
-│   └── Dockerfile
-├── cloudflare              # Triển khai lên Internet bằng Cloudflare
-├── frontend-admin/         # Giao diện quản trị (React + Vite)
-├── frontend-user/          # Giao diện Kiosk (React + Vite)
-├── models/                 # Trọng số AI (best_model.pth, face_landmarker.task)
-├── nginx/                  # Cấu hình reverse proxy
-├── scripts/                # Backup utilities + offline data prep
-├── secrets/                # Service account JSON (gitignored)
-├── docker-compose.yml      # Cấu hình triển khai (CPU)
-├── docker-compose.gpu.yml  # Lớp phủ tùy chọn cho GPU
-├── start.bat / start.sh    # Script khởi động tự dò GPU
-└── .env.example            # Mẫu biến môi trường
-```
 
 ## Sao lưu dữ liệu định kỳ
 
