@@ -392,135 +392,154 @@ SSL được Cloudflare cung cấp tự động — **không cần cài certbot 
 
 ## Sao lưu dữ liệu định kỳ
 
-Hệ thống backup tự động được tích hợp sẵn trong backend, chạy hàng ngày qua Celery Beat.
+Hệ thống backup được tích hợp sẵn trong backend (`backup_service.py` + `gdrive_uploader.py`).
 
 ### Những gì được backup
 
-| Thành phần | Nội dung | Bắt buộc |
+| Thành phần | File output | Ghi chú |
 |---|---|---|
-| PostgreSQL | Toàn bộ schema + data (employees, logs, admins) |  Luôn backup |
-| Qdrant | Snapshot collection `face_embeddings` (embeddings 512D) | = Luôn backup |
-| MinIO | Bucket `face-images` + `snapshots` (ảnh gốc) |  Tùy cấu hình |
+| PostgreSQL | `postgres.dump` | pg_dump custom format (`-F c`) |
+| Qdrant | `qdrant_face_embeddings.snapshot` | Snapshot toàn bộ collection |
+| MinIO | `minio/face-images/`, `minio/snapshots/` | Mặc định **tắt** |
 
-> ⚠️ **MinIO backup mặc định TẮT** (`BACKUP_INCLUDE_MINIO=false`). Lý do: ảnh gốc đã được lưu trong Docker volume `minio_data` — backup volume Docker là đủ. Bật khi cần backup ảnh sang nơi khác.
+> ⚠️ **MinIO backup mặc định TẮT** (`BACKUP_INCLUDE_MINIO=false`). Ảnh gốc đã nằm trong Docker volume `minio_data` — backup volume Docker là đủ. Bật khi cần sao lưu ảnh sang nơi khác.
 
 ---
 
-### Cấu hình
-
-Thêm vào `.env`:
+### Cấu hình `.env`
 
 ```env
 # ── Backup cơ bản ──
 BACKUP_ENABLED=true
-BACKUP_DIR=/app/backups
-BACKUP_RETENTION_DAYS=30      # giữ backup tối đa 30 ngày
+BACKUP_DIR=/backups
+BACKUP_RETENTION_DAYS=14        # xóa backup cũ hơn 14 ngày
 
-# ── MinIO backup (tùy chọn) ──
-BACKUP_INCLUDE_MINIO=false    # true nếu muốn backup ảnh gốc
+# ── MinIO (tùy chọn) ──
+BACKUP_INCLUDE_MINIO=false       # true để backup toàn bộ ảnh gốc
 
-# ── Google Drive upload (tùy chọn) ──
-GDRIVE_ENABLED=false
-GDRIVE_AUTH_MODE=oauth        # oauth | service_account
-GDRIVE_FOLDER_ID=             # ID folder trên Google Drive
+# ── Google Drive (tùy chọn) ──
+GOOGLE_DRIVE_ENABLED=false
+GOOGLE_DRIVE_AUTH_MODE=oauth     # oauth | service_account
+GOOGLE_DRIVE_FOLDER_ID=          # ID folder trên Google Drive
+GOOGLE_DRIVE_OAUTH_TOKEN=./secrets/gdrive-oauth-token.json
+GOOGLE_DRIVE_CREDENTIALS=./secrets/gdrive-service-account.json
 ```
 
 ---
 
-### Lịch chạy
-
-| Task | Thời gian | Chức năng |
-|---|---|---|
-| `full_backup_task` | 2:00 AM hàng ngày | Backup Postgres + Qdrant + MinIO (nếu bật) |
-| `cleanup_task` | 2:00 AM hàng ngày | Xóa snapshot ảnh cũ hơn 30 ngày trong MinIO |
-| `daily_report_task` | 23:59 hàng ngày | Tổng hợp chấm công trong ngày |
-
----
-
-### Upload lên Google Drive (tùy chọn)
-
-Hỗ trợ 2 chế độ xác thực:
-
-#### Cách A — OAuth (Gmail cá nhân, khuyến nghị)
-
-Dùng khi không có Google Workspace. Backup lưu vào Google Drive cá nhân.
-
-```bash
-# Chạy 1 lần để lấy OAuth token
-python scripts/gdrive_oauth_setup.py
-```
-
-Cấu hình `.env`:
-```env
-GDRIVE_ENABLED=true
-GDRIVE_AUTH_MODE=oauth
-GDRIVE_OAUTH_TOKEN_PATH=./secrets/gdrive_oauth_token.json
-GDRIVE_FOLDER_ID=<ID_folder_Google_Drive>
-```
-
-#### Cách B — Service Account (Google Workspace)
-
-Dùng khi có Google Workspace với Shared Drive.
-
-```bash
-# Tạo Service Account tại Google Cloud Console
-# Tải file JSON credentials về
-```
-
-Cấu hình `.env`:
-```env
-GDRIVE_ENABLED=true
-GDRIVE_AUTH_MODE=service_account
-GDRIVE_CREDENTIALS_PATH=./secrets/gdrive-service-account.json
-GDRIVE_FOLDER_ID=<ID_Shared_Drive>
-```
-
-> ⚠️ **Lưu ý**: Service Account với Google Drive cá nhân sẽ báo lỗi quota (quota = 0). Phải dùng Shared Drive hoặc chuyển sang OAuth.
-
----
-
-### Kết quả backup
-
-Mỗi lần backup tạo ra 1 thư mục theo timestamp:
+### Kết quả mỗi lần backup
 
 ```
-/app/backups/
-└── 20241201_020000/
-    ├── postgres.dump              # pg_dump format custom (-Fc)
-    ├── qdrant_face_embeddings.snapshot   # Qdrant snapshot
-    ├── minio/                     # (chỉ có nếu BACKUP_INCLUDE_MINIO=true)
+/backups/
+└── 20241201_023000/
+    ├── postgres.dump                      # dump PostgreSQL
+    ├── qdrant_face_embeddings.snapshot    # snapshot Qdrant
+    ├── minio/                             # chỉ có nếu BACKUP_INCLUDE_MINIO=true
     │   ├── face-images/
     │   └── snapshots/
-    └── manifest.json              # metadata: thời gian, kích thước, cấu hình
+    └── manifest.json                      # metadata: thời gian, kích thước
 ```
 
-Nếu `GDRIVE_ENABLED=true`, thư mục được nén thành `.tar.gz` và upload lên Google Drive. Backup cũ hơn `BACKUP_RETENTION_DAYS` ngày tự động bị xóa cả local lẫn Drive.
-
----
-
-### Restore
-
-```bash
-# Restore PostgreSQL
-docker compose exec postgres pg_restore \
-  -U admin -d facerecog -Fc \
-  /path/to/postgres.dump
-
-# Restore Qdrant
-curl -X POST "http://localhost:6333/collections/face_embeddings/snapshots/upload" \
-  -H "Content-Type: multipart/form-data" \
-  -F "snapshot=@/path/to/qdrant_face_embeddings.snapshot"
-```
+Nếu `GOOGLE_DRIVE_ENABLED=true`, thư mục được nén thành `facerecog_backup_<timestamp>.tar.gz` và upload lên Google Drive. Backup cũ hơn `BACKUP_RETENTION_DAYS` ngày tự động bị xóa cả local lẫn Drive.
 
 ---
 
 ### Kích hoạt backup thủ công
 
+Backup chưa được lên lịch tự động — chạy thủ công khi cần:
+
 ```bash
-# Chạy backup ngay lập tức (không cần chờ 2AM)
-curl -X POST http://localhost:8000/api/admin/backup/run \
-  -H "Authorization: Bearer <token>"
+docker compose exec backend python -c "
+from app.services.backup_service import run_full_backup
+import json
+result = run_full_backup()
+print(json.dumps(result, indent=2, ensure_ascii=False))
+"
 ```
+
+Kết quả thành công trông như sau:
+
+```json
+{
+  "success": true,
+  "backup_dir": "/backups/20241201_023000",
+  "components": {
+    "postgres": { "file": "postgres.dump", "size_bytes": 524288 },
+    "qdrant":   { "file": "qdrant_face_embeddings.snapshot", "size_bytes": 1048576 },
+    "minio":    { "skipped": true, "note": "Ảnh gốc nằm trong volume Docker minio_data" }
+  },
+  "old_backups_removed": 0,
+  "gdrive": { "success": true, "skipped": true, "reason": "gdrive_disabled" }
+}
+```
+
+---
+
+### Upload lên Google Drive (tùy chọn)
+
+Hỗ trợ 2 chế độ:
+
+#### Cách A — OAuth (Gmail cá nhân, khuyến nghị)
+
+```bash
+# Chạy 1 lần để xác thực, sinh ra file token
+python scripts/gdrive_oauth_setup.py
+```
+
+Cấu hình `.env`:
+```env
+GOOGLE_DRIVE_ENABLED=true
+GOOGLE_DRIVE_AUTH_MODE=oauth
+GOOGLE_DRIVE_OAUTH_TOKEN=./secrets/gdrive-oauth-token.json
+GOOGLE_DRIVE_FOLDER_ID=<ID_folder_Google_Drive>
+```
+
+File `secrets/gdrive-oauth-token.json` được sinh ra sau khi chạy `gdrive_oauth_setup.py`. **Không commit file này lên GitHub.**
+
+#### Cách B — Service Account (Google Workspace)
+
+Dùng khi có Google Workspace với Shared Drive.
+
+Cấu hình `.env`:
+```env
+GOOGLE_DRIVE_ENABLED=true
+GOOGLE_DRIVE_AUTH_MODE=service_account
+GOOGLE_DRIVE_CREDENTIALS=./secrets/gdrive-service-account.json
+GOOGLE_DRIVE_FOLDER_ID=<ID_Shared_Drive>
+```
+
+> ⚠️ Service Account với Google Drive **cá nhân** sẽ báo lỗi `storageQuotaExceeded` (quota = 0). Phải dùng Shared Drive hoặc chuyển sang OAuth.
+
+---
+
+### Các task chạy định kỳ (Celery Beat)
+
+| Task | Thời gian | Chức năng |
+|---|---|---|
+| `cleanup_task` | 2:00 AM hàng ngày | Xóa ảnh snapshot check-in cũ hơn 30 ngày khỏi MinIO |
+| `daily_report_task` | 23:59 hàng ngày | Tổng hợp số lượt chấm công trong ngày |
+
+---
+
+### Restore khi cần
+
+```bash
+# ── Restore PostgreSQL ──
+# Bước 1: copy file vào container
+docker cp ./backups/20241201_023000/postgres.dump \
+  $(docker compose ps -q postgres):/tmp/postgres.dump
+
+# Bước 2: restore
+docker compose exec postgres pg_restore \
+  -U admin -d facerecog -F c /tmp/postgres.dump
+
+# ── Restore Qdrant ──
+curl -X POST \
+  "http://localhost:6333/collections/face_embeddings/snapshots/upload" \
+  -H "Content-Type: multipart/form-data" \
+  -F "snapshot=@./backups/20241201_023000/qdrant_face_embeddings.snapshot"
+```
+
 
 
 ## Dừng hệ thống
