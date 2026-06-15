@@ -6,9 +6,9 @@ function formatTime(isoString) {
 export default function AccessLog({ logs }) {
   return (
     <div className="access-log-card">
-      <h2>Lịch sử theo thời gian thực</h2>
+      <h2>Real-Time History</h2>
       {logs.length === 0 ? (
-        <p className="log-empty">Chưa có bản ghi.</p>
+        <p className="log-empty">No records yet.</p>
       ) : (
         <ul className="log-list">
           {logs.map((log) => (
