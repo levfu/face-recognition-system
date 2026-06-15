@@ -45,7 +45,7 @@ class FaceMatcher:
             if not results:
                 return MatchResult(
                     matched=False, person_id=None, name=None,
-                    confidence=0.0, message="Không tìm thấy ai trong hệ thống",
+                    confidence=0.0, message="No person found in the system",
                     score_2d=0.0, score_3d=None
                 )
 
@@ -87,7 +87,7 @@ class FaceMatcher:
                 return MatchResult(
                     matched=False, person_id=None, name=None,
                     confidence=round(score, 4),
-                    message="Không nhận ra khuôn mặt",
+                    message="Face not recognized",
                     score_2d=round(best_score_2d, 4),
                     score_3d=_round3d(best_score_3d)
                 )
@@ -97,7 +97,7 @@ class FaceMatcher:
                 return MatchResult(
                     matched=False, person_id=user_id, name=None,
                     confidence=round(score, 4),
-                    message="Người dùng không tồn tại trong hệ thống",
+                    message="User does not exist in the system",
                     score_2d=round(best_score_2d, 4),
                     score_3d=_round3d(best_score_3d)
                 )
@@ -106,7 +106,7 @@ class FaceMatcher:
                 return MatchResult(
                     matched=False, person_id=user_id, name=person.get("name"),
                     confidence=round(score, 4),
-                    message="Tài khoản đã bị vô hiệu hóa",
+                    message="Account has been disabled",
                     score_2d=round(best_score_2d, 4),
                     score_3d=_round3d(best_score_3d)
                 )
@@ -114,7 +114,7 @@ class FaceMatcher:
             return MatchResult(
                 matched=True, person_id=user_id, name=person.get("name"),
                 confidence=round(score, 4),
-                message="Xác nhận thành công",
+                message="Verification successful",
                 score_2d=round(best_score_2d, 4),
                 score_3d=_round3d(best_score_3d)
             )
@@ -124,7 +124,7 @@ class FaceMatcher:
             print(_tb.format_exc())
             return MatchResult(
                 matched=False, person_id=None, name=None,
-                confidence=0.0, message=f"Lỗi hệ thống: {str(e)}",
+                confidence=0.0, message=f"System error: {str(e)}",
                 score_2d=0.0, score_3d=None
             )
 
