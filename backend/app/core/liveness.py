@@ -22,7 +22,7 @@ class LivenessDetector:
 
     def check(self, face_array: np.ndarray, image_bytes: bytes = None) -> LivenessResult:
         if not settings.liveness_enabled:
-            return LivenessResult(is_live=True, score=1.0, message="Liveness tat")
+            return LivenessResult(is_live=True, score=1.0, message="Liveness off")
 
         if image_bytes is None:
             logger.error("[Liveness] image_bytes=None - cannot run anti-spoof")
