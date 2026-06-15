@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-const DAYS = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+const DAYS = ['Sunday', 'Monday', 'Wednesday', 'Tuesday', 'Thursday', 'Friday', 'Saturday'];
 
 function fmt2(n) { return String(n).padStart(2, '0'); }
 function getTimeStr(d) { return `${fmt2(d.getHours())}:${fmt2(d.getMinutes())}:${fmt2(d.getSeconds())}`; }
@@ -84,7 +84,7 @@ export default function App() {
     <main className="app-layout">
       <section className="camera-section">
         <div className="camera-header">
-          <h1>Kiosk Nhận Diện Khuôn Mặt</h1>
+          <h1>Kiosk Face Recognition System</h1>
           <div className="clock-display">
             <div className="clock-time">{getTimeStr(now)}</div>
             <div className="clock-date">{getDateStr(now)}</div>
