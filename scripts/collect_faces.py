@@ -11,10 +11,10 @@ def collect_faces(output_dir: Path, person_code: str, frames: int = 100, camera_
 
     cap = cv2.VideoCapture(camera_index)
     if not cap.isOpened():
-        raise RuntimeError("Khong the mo webcam. Kiem tra camera_index hoac quyen truy cap camera.")
+        raise RuntimeError("Unable to open the webcam. Check the camera_index or camera access permissions.")
 
     saved = 0
-    print("Nhan phim SPACE de chup, Q de thoat.")
+    print("Press SPACE to capture, Q to quit.")
     try:
         while saved < frames:
             ok, frame = cap.read()
@@ -33,18 +33,38 @@ def collect_faces(output_dir: Path, person_code: str, frames: int = 100, camera_
                 cv2.imwrite(str(file_path), frame)
                 saved += 1
 
-        print(f"Da luu {saved} anh vao: {person_dir}")
+        print(f"Saved {saved} image to {person_dir}")
     finally:
         cap.release()
         cv2.destroyAllWindows()
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Thu thap du lieu khuon mat tu webcam.")
-    parser.add_argument("--person-code", required=True, help="Ma nhan vien, vi du EMP001")
-    parser.add_argument("--frames", type=int, default=100, help="So frame can thu thap")
-    parser.add_argument("--camera-index", type=int, default=0, help="Index webcam")
-    parser.add_argument("--output-dir", default="dataset/raw", help="Thu muc luu anh goc")
+    parser = argparse.ArgumentParser(
+        description="Collect face images from a webcam."
+    )
+    parser.add_argument(
+        "--person-code",
+        required=True,
+        help="Employee code, e.g. EMP001"
+    )
+    parser.add_argument(
+        "--frames",
+        type=int,
+        default=100,
+        help="Number of frames to capture"
+    )
+    parser.add_argument(
+        "--camera-index",
+        type=int,
+        default=0,
+        help="Webcam index"
+    )
+    parser.add_argument(
+        "--output-dir",
+        default="dataset/raw",
+        help="Directory to store raw images"
+    )
     return parser.parse_args()
 
 
