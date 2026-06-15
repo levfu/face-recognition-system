@@ -90,7 +90,7 @@ class TestFaceMatcher:
             result = matcher.match(sample_embedding)
 
         assert result.matched is False
-        assert "vô hiệu hóa" in result.message
+        assert "Disable" in result.message
 
     def test_no_results_from_qdrant(self, sample_embedding):
         """Qdrant trả về rỗng → matched=False."""
@@ -169,7 +169,7 @@ class TestRecognitionService:
             mock_liveness.check.return_value = LivenessResult(
                 is_live=False,
                 score=0.2,
-                message="Phát hiện ảnh giả"
+                message="Spoofing detected"
             )
             result = service.recognize(sample_image_bytes)
 
@@ -196,7 +196,7 @@ class TestRecognitionService:
 
             mock_detector.detect_from_bytes.return_value = mock_detected
             mock_liveness.check.return_value = LivenessResult(
-                is_live=True, score=0.9, message="Khuôn mặt thật"
+                is_live=True, score=0.9, message="Real face"
             )
             mock_embedder.get_embedding.return_value = [0.1] * 512
             mock_matcher.match.return_value = MatchResult(
@@ -204,7 +204,7 @@ class TestRecognitionService:
                 person_id="emp_001",
                 name="Nguyen Van A",
                 confidence=0.92,
-                message="Xác nhận thành công"
+                message="Confirm successfully"
             )
 
             result = service.recognize(sample_image_bytes)
