@@ -318,8 +318,8 @@ Go to **Cloudflare dashboard → DNS → Add record** and add 2 CNAME entries:
 
 | Type | Name | Target | Proxy |
 |------|------|--------|-------|
-| CNAME | face | `<TUNNEL_ID>.cfargotunnel.com` | ✅ ON (orange) |
-| CNAME | admin.face | `<TUNNEL_ID>.cfargotunnel.com` | ✅ ON (orange) |
+| CNAME | face | `<TUNNEL_ID>.cfargotunnel.com` |  ON (orange) |
+| CNAME | admin.face | `<TUNNEL_ID>.cfargotunnel.com` |  ON (orange) |
 
 > ⚠️ Proxy must be **ON** — required for automatic SSL.
 
