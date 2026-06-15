@@ -124,7 +124,7 @@ def run_full_backup() -> dict:
         else:
             components["minio"] = {
                 "skipped": True,
-                "note": "Ảnh gốc nằm trong volume Docker minio_data",
+                "note": "Original images are stored in the MinIO volume: minio_data.",
             }
 
         manifest = {
@@ -166,7 +166,7 @@ def run_full_backup() -> dict:
         }
         if settings.gdrive_enabled and not gdrive.get("success"):
             result["gdrive_warning"] = (
-                "Backup local OK nhưng upload Google Drive thất bại"
+                "Local backup OK, but Google Drive upload failed."
             )
         return result
     except Exception as exc:
