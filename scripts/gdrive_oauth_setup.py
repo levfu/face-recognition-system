@@ -43,8 +43,8 @@ def main() -> int:
     creds = flow.run_local_server(port=0, prompt="consent")
 
     TOKEN_FILE.write_text(creds.to_json(), encoding="utf-8")
-    print(f"Đã lưu token: {TOKEN_FILE}")
-    print("Cập nhật .env:")
+    print(f"Saved token: {TOKEN_FILE}")
+    print("Update .env:")
     print("  GOOGLE_DRIVE_AUTH_MODE=oauth")
     print("  GOOGLE_DRIVE_OAUTH_TOKEN=/secrets/gdrive-oauth-token.json")
     print("  GOOGLE_DRIVE_CREDENTIALS=  # Service Account is no longer required")
