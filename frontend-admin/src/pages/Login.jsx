@@ -26,9 +26,9 @@ function HealthIndicator() {
   if (status === 'loading') return null;
 
   const cfg = {
-    ok:       { color: '#10b981', text: 'Hệ thống đang hoạt động' },
-    degraded: { color: '#f59e0b', text: 'Một số dịch vụ gặp sự cố' },
-  }[status] ?? { color: '#ef4444', text: 'Hệ thống gặp sự cố — vui lòng liên hệ admin' };
+    ok:       { color: '#10b981', text: 'System is operational.' },
+    degraded: { color: '#f59e0b', text: 'Some services are down.' },
+  }[status] ?? { color: '#ef4444', text: 'System error — please contact the administrator.' };
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: cfg.color }}>
@@ -64,8 +64,8 @@ const Login = () => {
     e.preventDefault();
 
     const newErrors = { username: '', password: '' };
-    if (!username.trim()) newErrors.username = 'Vui lòng nhập tên đăng nhập';
-    if (!password)        newErrors.password = 'Vui lòng nhập mật khẩu';
+    if (!username.trim()) newErrors.username = 'Enter username.';
+    if (!password)        newErrors.password = 'Enter password.';
     if (newErrors.username || newErrors.password) {
       setErrors(newErrors);
       return;
@@ -81,12 +81,12 @@ const Login = () => {
       localStorage.setItem('adminToken', res.data.access_token);
       localStorage.setItem('adminRole', res.data.role ?? 'admin');
       localStorage.setItem('adminUsername', res.data.username ?? '');
-      showToast('Đăng nhập thành công!', 'success');
+      showToast('Successfully logged in!', 'success');
       setTimeout(() => {
         window.location.href = '/dashboard';
       }, 300);
     } catch (error) {
-      const msg = error.response?.data?.detail || 'Lỗi kết nối, vui lòng thử lại';
+      const msg = error.response?.data?.detail || 'Unable to connect. Please try again.';
       showToast(msg, 'error');
     } finally {
       setLoading(false);
@@ -97,25 +97,25 @@ const Login = () => {
     <div className="login-root">
       <header className="login-brand">
         <ScanFace size={56} color="var(--accent)" strokeWidth={1.5} />
-        <h1 className="brand-title">Hệ Thống Chấm Công Khuôn Mặt</h1>
-        <p className="brand-subtitle">Quản lý nhân viên và theo dõi điểm danh</p>
+        <h1 className="brand-title">Face Attendance System</h1>
+        <p className="brand-subtitle">Employee & Attendance Management</p>
       </header>
 
       <div className="login-card">
         <h2 style={{ margin: '0 0 24px', fontSize: 20, fontWeight: 700, textAlign: 'center', color: 'var(--text)' }}>
-          Đăng nhập
+          Login
         </h2>
         <form onSubmit={handleLogin} noValidate style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div>
             <Input
-              label="Tài Khoản"
+              label="Account"
               type="text"
               value={username}
               onChange={e => { setUsername(e.target.value); if (errors.username) setErrors(prev => ({ ...prev, username: '' })); }}
               disabled={loading}
               autoFocus
               autoComplete="username"
-              placeholder="Nhập tên đăng nhập"
+              placeholder="Enter your username"
               style={errors.username ? { borderColor: 'var(--danger)' } : {}}
             />
             {errors.username && (
@@ -126,7 +126,7 @@ const Login = () => {
           </div>
           <div>
             <div className="form-group">
-              <label className="label">Mật Khẩu</label>
+              <label className="label">Password</label>
               <div style={{ position: 'relative' }}>
                 <input
                   className="input"
@@ -135,7 +135,7 @@ const Login = () => {
                   onChange={e => { setPassword(e.target.value); if (errors.password) setErrors(prev => ({ ...prev, password: '' })); }}
                   disabled={loading}
                   autoComplete="current-password"
-                  placeholder="Nhập mật khẩu"
+                  placeholder="Enter password"
                   style={{ paddingRight: 44, ...(errors.password ? { borderColor: 'var(--danger)' } : {}) }}
                 />
                 <button
@@ -176,12 +176,12 @@ const Login = () => {
             {loading ? (
               <>
                 <span className="spinner"></span>
-                Đang đăng nhập...
+                Logging in...
               </>
             ) : (
               <>
                 <LogIn size={16} />
-                Đăng Nhập
+                Login
               </>
             )}
           </Button>
@@ -192,7 +192,7 @@ const Login = () => {
             onClick={() => setShowForgot(true)}
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-dim)', fontSize: 13, textDecoration: 'underline', padding: 0 }}
           >
-            Quên mật khẩu?
+            Forgot password?
           </button>
         </div>
       </div>
@@ -209,16 +209,16 @@ const Login = () => {
             style={{ width: 380, boxShadow: '0 20px 60px rgba(0,0,0,0.3)', borderRadius: 'var(--radius, 12px)' }}
             onClick={e => e.stopPropagation()}
           >
-            <h3 style={{ margin: '0 0 12px', fontSize: 16, fontWeight: 700 }}>Quên mật khẩu?</h3>
+            <h3 style={{ margin: '0 0 12px', fontSize: 16, fontWeight: 700 }}>Forgot password?</h3>
             <p style={{ margin: '0 0 20px', fontSize: 14, color: 'var(--text-dim)', lineHeight: 1.6 }}>
-              Vui lòng liên hệ Super Admin để được reset mật khẩu. Hãy cung cấp tên đăng nhập của bạn.
+              Please contact the Super Admin to reset your password and provide your username.
             </p>
             <Button
               type="button" variant="primary"
               onClick={() => setShowForgot(false)}
               style={{ width: '100%', padding: '11px 16px', display: 'flex', justifyContent: 'center' }}
             >
-              Đã hiểu
+              Understood
             </Button>
           </div>
         </div>
