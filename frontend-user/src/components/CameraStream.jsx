@@ -62,7 +62,7 @@ export default function CameraStream({ fps = 5, onRecognition, onFaceStatusChang
   const cooldownUntilRef    = useRef(0);
   const localStreamRef   = useRef(null);
 
-  const [status, setStatus]         = useState("Đang khởi động camera...");
+  const [status, setStatus]         = useState("Initializing camera...");
   const [faceStatus, setFaceStatus] = useState(null);
   const wsUrl = useMemo(() => buildWsUrl(action), [action]);
 
@@ -71,7 +71,7 @@ export default function CameraStream({ fps = 5, onRecognition, onFaceStatusChang
     const connectSocket = () => {
       const socket = new WebSocket(wsUrl);
       socketRef.current = socket;
-      socket.onopen    = () => { setStatus("WebSocket đã kết nối"); startCaptureLoop(); };
+      socket.onopen    = () => { setStatus("WebSocket connected."); startCaptureLoop(); };
       socket.onmessage = (event) => {
         const payload = JSON.parse(event.data);
         drawOverlay(payload.faces || [], payload.checkin_status);
@@ -83,7 +83,7 @@ export default function CameraStream({ fps = 5, onRecognition, onFaceStatusChang
         }
         isSendingRef.current = false;
       };
-      socket.onerror  = () => setStatus("WebSocket gặp lỗi");
+      socket.onerror  = () => setStatus("WebSocket error.");
       socket.onclose  = () => stopCaptureLoop();
     };
 
@@ -103,11 +103,11 @@ export default function CameraStream({ fps = 5, onRecognition, onFaceStatusChang
           if (!videoRef.current) return;
           videoRef.current.srcObject = stream;
           await videoRef.current.play();
-          setStatus("Camera đã kết nối");
+          setStatus("Camera connected.");
         }
         connectSocket();
       } catch {
-        setStatus("Không thể truy cập webcam");
+        setStatus("Unable to access the webcam.");
       }
     };
 
@@ -300,10 +300,10 @@ export default function CameraStream({ fps = 5, onRecognition, onFaceStatusChang
       let color, label;
       if (checkinStatus === 'spoof') {
         color = '#dc2626';
-        label = 'Giả mạo';
+        label = 'Spoof detected.';
       } else if (checkinStatus === 'pending') {
         color = '#f59e0b';
-        label = 'Đang xác nhận...';
+        label = 'Verifying...';
       } else if (checkinStatus === 'success' || checkinStatus === 'new_checkin' || checkinStatus === 'already_checked_in' || checkinStatus === 'already_checked_out') {
         color = '#10b981';
         label = `${face.name} (${((face.confidence || 0) * 100).toFixed(1)}%)`;
@@ -337,12 +337,12 @@ export default function CameraStream({ fps = 5, onRecognition, onFaceStatusChang
     });
   }
 
-  const badgeClass =
-    status.includes("WebSocket đã kết nối")
-      ? "badge--connected"
-      : status.includes("lỗi") || status.includes("không thể")
-        ? "badge--error"
-        : "badge--connecting";
+const badgeClass =
+  status.includes("WebSocket connected")
+    ? "badge--connected"
+    : status.includes("error") || status.includes("Unable to")
+      ? "badge--error"
+      : "badge--connecting";
 
   const ovalStyle =
     faceStatus === 'lost'
@@ -353,12 +353,12 @@ export default function CameraStream({ fps = 5, onRecognition, onFaceStatusChang
         : {};
 
   const hintText =
-    faceStatus === 'lost'        ? 'Không thấy mặt — vui lòng nhìn vào camera'
-    : faceStatus === 'out'         ? 'Đưa mặt vào khung'
-    : faceStatus === 'small'       ? 'Lại gần hơn'
-    : faceStatus === 'large'       ? 'Lùi ra xa hơn'
-    : faceStatus === 'occluded'    ? 'Vui lòng bỏ tay khỏi mặt'
-    : faceStatus === 'eyes_closed' ? 'Vui lòng mở mắt nhìn vào camera'
+    faceStatus === 'lost'        ? 'No face detected — please look at the camera'
+    : faceStatus === 'out'         ? 'Please position your face inside the frame'
+    : faceStatus === 'small'       ? 'Move closer'
+    : faceStatus === 'large'       ? 'Move farther away'
+    : faceStatus === 'occluded'    ? 'Please remove any obstruction from your face'
+    : faceStatus === 'eyes_closed' ? 'Please open your eyes and look at the camera'
     : null;
 
   return (
