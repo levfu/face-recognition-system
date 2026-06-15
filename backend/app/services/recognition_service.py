@@ -54,7 +54,7 @@ class RecognitionService:
                 return RecognitionResult(
                     success=False, matched=False, person_id=None, name=None,
                     confidence=0.0, bbox={}, is_live=False,
-                    message="Không phát hiện khuôn mặt", access_granted=False
+                    message="No face detected", access_granted=False
                 )
 
             try:
@@ -166,19 +166,19 @@ class RecognitionService:
                 return {
                     "status": "already_checked_in",
                     "first_time": existing_in.created_at,
-                    "message": f"Bạn đã check-in lúc {existing_in.created_at.strftime('%H:%M')}",
+                    "message": f"You already checked in at {existing_in.created_at.strftime('%H:%M')}",
                 }
         elif action == 'check_out':
             if not existing_in:
                 return {
                     "status": "no_checkin_yet",
-                    "message": "Bạn chưa check-in hôm nay. Vui lòng check-in trước.",
+                    "message": "You have not checked in today. Please check in first.",
                 }
             if existing_out:
                 return {
                     "status": "already_checked_out",
                     "first_time": existing_out.created_at,
-                    "message": f"Bạn đã check-out lúc {existing_out.created_at.strftime('%H:%M')}",
+                    "message": f"You already checked out at {existing_out.created_at.strftime('%H:%M')}",
                 }
         else:
             return {"status": "invalid_action"}
@@ -227,7 +227,7 @@ class RecognitionService:
             "action": action,
             "log_id": new_log.id,
             "time": new_log.created_at,
-            "message": "Check-in thành công" if action == 'check_in' else "Check-out thành công",
+            "message": "Check-in successful" if action == 'check_in' else "Check-out successful",
         }
 
 
