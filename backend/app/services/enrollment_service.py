@@ -24,7 +24,7 @@ class EnrollmentResult:
 
 
 def check_employee_exists(emp_code: str, db: Session) -> dict | None:
-    """Trả về {emp_code, name, points_count} nếu active employee tồn tại, None nếu chưa."""
+    """Returns {emp_code, name, points_count} if active employee exists, None otherwise."""
     employee = db.query(Employee).filter(
         Employee.code == emp_code, Employee.is_active == True
     ).first()
@@ -37,7 +37,7 @@ def check_employee_exists(emp_code: str, db: Session) -> dict | None:
 
 
 def delete_employee_completely(emp_code: str, db: Session) -> None:
-    """Xóa employee khỏi 4 nơi theo thứ tự an toàn."""
+    """Deletes an employee from 4 places in a safe order."""
     employee = db.query(Employee).filter(
         Employee.code == emp_code, Employee.is_active == True
     ).first()
@@ -84,7 +84,7 @@ class EnrollmentService:
             raise HTTPException(
                 status_code=409,
                 detail={
-                    "detail": "Mã nhân viên đã tồn tại",
+                    "detail": "Employee code already exists",
                     "existing": existing,
                 },
             )
@@ -100,7 +100,7 @@ class EnrollmentService:
         for idx, image_bytes in enumerate(images_bytes):
             outcome = face_detector.detect_from_bytes(image_bytes, apply_oval_gate=False)
             if outcome.face is None:
-                logger.warning("[Enroll] Ảnh %d/%d: không detect được mặt, bỏ qua", idx + 1, len(images_bytes))
+                logger.warning("[Enroll] Image %d/%d: no face detected, skipping", idx + 1, len(images_bytes))
                 continue
 
             embedding = face_embedder.get_embedding(outcome.face.face_array)
@@ -132,13 +132,13 @@ class EnrollmentService:
             )
             db.delete(employee)
             db.commit()
-            raise HTTPException(400, "Không detect được mặt nào trong các ảnh đã gửi")
+            raise HTTPException(400, "No faces detected in the uploaded images")
 
         db.commit()
         return EnrollmentResult(
             success=True,
             person_id=str(employee.id),
-            message=f"Đăng ký thành công {points_created}/{len(images_bytes)} ảnh",
+            message=f"Successfully enrolled {points_created}/{len(images_bytes)} images",
             points_created=points_created,
         )
 
