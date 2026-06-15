@@ -21,7 +21,7 @@ class EmployeeCreate(BaseModel):
 
 
 class EmployeeUpdate(BaseModel):
-    name: Optional[str]      = None
+    name: Optional[str]       = None
     department: Optional[str] = None
     is_active: Optional[bool] = None
 
@@ -63,13 +63,13 @@ def create_admin(
 ):
     username = body.username.strip()
     if len(username) < 3:
-        raise HTTPException(400, "Tên đăng nhập phải có ít nhất 3 ký tự")
+        raise HTTPException(400, "Username must be at least 3 characters")
     if len(body.password) < 6:
-        raise HTTPException(400, "Mật khẩu phải có ít nhất 6 ký tự")
+        raise HTTPException(400, "Password must be at least 6 characters")
 
     existing = db.query(Admin).filter(Admin.username == username).first()
     if existing:
-        raise HTTPException(400, f"Tài khoản '{username}' đã tồn tại")
+        raise HTTPException(400, f"Account '{username}' already exists")
 
     admin = Admin(username=username)
     admin.set_password(body.password)
@@ -92,19 +92,19 @@ def reset_admin_password(
     current_admin: Admin = Depends(require_super_admin),
 ):
     if len(body.new_password) < 6:
-        raise HTTPException(400, "Mật khẩu phải có ít nhất 6 ký tự")
+        raise HTTPException(400, "Password must be at least 6 characters")
 
     admin = db.query(Admin).filter(Admin.id == admin_id).first()
     if not admin:
-        raise HTTPException(404, "Không tìm thấy tài khoản admin")
+        raise HTTPException(404, "Admin account not found")
 
     if getattr(admin, 'role', 'admin') == 'super_admin':
-        raise HTTPException(400, "Không thể reset mật khẩu tài khoản Super Admin")
+        raise HTTPException(400, "Cannot reset password for Super Admin account")
 
     admin.set_password(body.new_password)
     db.commit()
     log_action(db, str(current_admin.id), "reset_password", target_type="admin", target_id=str(admin.id), details={"username": admin.username})
-    return {"success": True, "message": f"Đã reset mật khẩu cho {admin.username}"}
+    return {"success": True, "message": f"Password reset for {admin.username}"}
 
 
 @router.delete("/admins/{admin_id}")
@@ -114,31 +114,31 @@ def delete_admin(
     current_admin: Admin = Depends(require_super_admin),
 ):
     if str(current_admin.id) == admin_id:
-        raise HTTPException(400, "Không thể xóa tài khoản đang đăng nhập")
+        raise HTTPException(400, "Cannot delete the currently logged-in account")
 
     admin = db.query(Admin).filter(Admin.id == admin_id).first()
     if not admin:
-        raise HTTPException(404, "Không tìm thấy tài khoản admin")
+        raise HTTPException(404, "Admin account not found")
 
     if getattr(admin, 'role', 'admin') == 'super_admin':
-        raise HTTPException(400, "Không thể xóa tài khoản Super Admin")
+        raise HTTPException(400, "Cannot delete Super Admin account")
 
     total = db.query(Admin).count()
     if total <= 1:
-        raise HTTPException(400, "Phải giữ ít nhất một tài khoản admin")
+        raise HTTPException(400, "Must keep at least one admin account")
 
     deleted_username = admin.username
     db.delete(admin)
     db.commit()
     log_action(db, str(current_admin.id), "delete_admin", target_type="admin", target_id=admin_id, details={"username": deleted_username})
-    return {"success": True, "message": f"Đã xóa tài khoản {deleted_username}"}
+    return {"success": True, "message": f"Account {deleted_username} deleted"}
 
 
 # ── Employee CRUD ──
 @router.get("/employees")
 def list_employees(
     db: Session = Depends(get_db),
-    _           = Depends(get_current_admin)
+    _             = Depends(get_current_admin)
 ):
     employees = db.query(Employee).filter(Employee.is_active == True).all()
     return [
@@ -158,13 +158,13 @@ def list_employees(
 def create_employee(
     body: EmployeeCreate,
     db: Session = Depends(get_db),
-    _           = Depends(get_current_admin)
+    _             = Depends(get_current_admin)
 ):
     existing = db.query(Employee).filter(
         Employee.code == body.code, Employee.is_active == True
     ).first()
     if existing:
-        raise HTTPException(400, f"Mã nhân viên {body.code} đã tồn tại")
+        raise HTTPException(400, f"Employee code {body.code} already exists")
 
     employee = Employee(
         name=body.name,
@@ -182,13 +182,13 @@ def update_employee(
     employee_id: str,
     body: EmployeeUpdate,
     db: Session = Depends(get_db),
-    _           = Depends(get_current_admin)
+    _             = Depends(get_current_admin)
 ):
     employee = db.query(Employee).filter(
         Employee.id == employee_id
     ).first()
     if not employee:
-        raise HTTPException(404, "Không tìm thấy nhân viên")
+        raise HTTPException(404, "Employee not found")
 
     if body.name is not None:
         employee.name = body.name
@@ -198,20 +198,20 @@ def update_employee(
         employee.is_active = body.is_active
 
     db.commit()
-    return {"success": True, "message": "Cập nhật thành công"}
+    return {"success": True, "message": "Update successful"}
 
 
 @router.delete("/employees/{employee_id}")
 def delete_employee(
     employee_id: str,
     db: Session = Depends(get_db),
-    _           = Depends(get_current_admin)
+    _             = Depends(get_current_admin)
 ):
     employee = db.query(Employee).filter(
         Employee.id == employee_id
     ).first()
     if not employee:
-        raise HTTPException(404, "Không tìm thấy nhân viên")
+        raise HTTPException(404, "Employee not found")
 
     from datetime import datetime as _dt
     import logging as _log
@@ -231,7 +231,7 @@ def delete_employee(
 
     return {
         "success": True,
-        "message": f"Đã vô hiệu hóa nhân viên {emp_name}",
+        "message": f"Employee {emp_name} deactivated",
         "deleted": {"emp_code": emp_code, "name": emp_name},
     }
 
@@ -260,8 +260,8 @@ def get_logs(
 
     return [
         {
-            "id":             str(l.id),
-            "person_id":      str(l.person_id) if l.person_id else None,
+            "id":           str(l.id),
+            "person_id":     str(l.person_id) if l.person_id else None,
             "employee_code":  l.employee_code,
             "employee_name":  l.employee_name,
             "recognized":     l.recognized,
@@ -281,7 +281,7 @@ def get_logs(
 @router.get("/stats/overview")
 def get_stats_overview(
     db: Session = Depends(get_db),
-    _  = Depends(get_current_admin),
+    _ = Depends(get_current_admin),
 ):
     from datetime import date, timedelta, datetime as dt
 
@@ -346,7 +346,7 @@ def get_checkins_range(
     start_date: str,
     end_date: str,
     db: Session = Depends(get_db),
-    _  = Depends(get_current_admin),
+    _ = Depends(get_current_admin),
 ):
     from datetime import date, timedelta, datetime as dt
     from sqlalchemy import func, cast, Date as SADate
@@ -355,12 +355,12 @@ def get_checkins_range(
         start = date.fromisoformat(start_date)
         end   = date.fromisoformat(end_date)
     except ValueError:
-        raise HTTPException(400, "Ngày không hợp lệ, dùng định dạng YYYY-MM-DD")
+        raise HTTPException(400, "Invalid date format, use YYYY-MM-DD")
 
     if (end - start).days > 31:
-        raise HTTPException(400, "Khoảng ngày tối đa 31 ngày")
+        raise HTTPException(400, "Maximum range is 31 days")
     if start > end:
-        raise HTTPException(400, "start_date phải nhỏ hơn hoặc bằng end_date")
+        raise HTTPException(400, "start_date must be less than or equal to end_date")
 
     rows = (
         db.query(
@@ -389,7 +389,7 @@ def get_checkins_range(
 def get_checkins_by_date(
     date: Optional[str] = None,
     db: Session = Depends(get_db),
-    _  = Depends(get_current_admin),
+    _ = Depends(get_current_admin),
 ):
     from datetime import date as date_type, datetime as dt
     from sqlalchemy import func, cast, Date as SADate
@@ -398,7 +398,7 @@ def get_checkins_by_date(
         try:
             target = date_type.fromisoformat(date)
         except ValueError:
-            raise HTTPException(400, "Ngày không hợp lệ, dùng định dạng YYYY-MM-DD")
+            raise HTTPException(400, "Invalid date format, use YYYY-MM-DD")
     else:
         target = date_type.today()
 
@@ -441,7 +441,7 @@ def get_checkins_by_date(
 def get_checkins_by_week(
     week_start: Optional[str] = None,
     db: Session = Depends(get_db),
-    _  = Depends(get_current_admin),
+    _ = Depends(get_current_admin),
 ):
     from datetime import date as date_type, timedelta, datetime as dt
     from sqlalchemy import func
@@ -450,7 +450,7 @@ def get_checkins_by_week(
         try:
             start = date_type.fromisoformat(week_start)
         except ValueError:
-            raise HTTPException(400, "Ngày không hợp lệ, dùng định dạng YYYY-MM-DD")
+            raise HTTPException(400, "Invalid date format, use YYYY-MM-DD")
     else:
         today = date_type.today()
         start = today - timedelta(days=today.weekday())
@@ -502,8 +502,8 @@ class SystemSettings(BaseModel):
 @router.get("/settings")
 def get_settings(_ = Depends(require_super_admin)):
     return {
-        "ai_threshold":       settings.ai_threshold,
-        "liveness_enabled":   settings.liveness_enabled,
+        "ai_threshold":      settings.ai_threshold,
+        "liveness_enabled":  settings.liveness_enabled,
         "liveness_score_min": settings.liveness_score_min,
     }
 
@@ -528,7 +528,7 @@ def update_settings(
 
     if changes:
         log_action(db, str(current_admin.id), "update_settings", details={"changes": changes})
-    return {"success": True, "message": "Cập nhật cấu hình thành công"}
+    return {"success": True, "message": "Configuration updated successfully"}
 
 
 # ── Activity Logs ──
