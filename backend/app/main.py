@@ -88,7 +88,7 @@ async def _health_poller() -> None:
 # ── Startup / Shutdown ──
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("[Startup] Khởi động hệ thống...")
+    print("[Startup] Starting system...")
 
     from app.db.postgres import Base, engine, ensure_default_admin, SessionLocal, Admin
     Base.metadata.create_all(bind=engine)
@@ -141,19 +141,19 @@ async def lifespan(app: FastAPI):
     poller = asyncio.create_task(_health_poller())
     print("[Startup] Health poller (1.5s interval)")
 
-    print("[Startup] Hệ thống sẵn sàng")
+    print("[Startup] System ready")
 
     yield
 
     poller.cancel()
-    print("[Shutdown] Đang tắt hệ thống...")
+    print("[Shutdown] Shutting down system...")
 
 
-# ── Khởi tạo FastAPI ──
+# ── Initialize FastAPI ──
 app = FastAPI(
     title=settings.app_name,
     version="1.0.0",
-    description="Hệ thống nhận diện khuôn mặt thời gian thực",
+    description="Real-time face recognition system",
     docs_url="/api/docs",
     redoc_url="/api/redoc",
     lifespan=lifespan
