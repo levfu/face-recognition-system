@@ -95,11 +95,11 @@ function Modal({ title, onClose, children }) {
 function StatusBadge({ isActive }) {
   return (isActive === true) ? (
     <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 4, background: 'rgba(16,185,129,0.12)', color: '#059669', whiteSpace: 'nowrap' }}>
-      Đang làm việc
+      Working
     </span>
   ) : (
     <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 4, background: 'var(--bg-dim,#f1f5f9)', color: 'var(--text-dim)', whiteSpace: 'nowrap' }}>
-      Đã nghỉ việc
+      Resigned
     </span>
   );
 }
@@ -109,7 +109,7 @@ function ModalTable({ columns, rows, emptyText, footer }) {
   if (rows === null) {
     return (
       <div style={{ padding: '32px 20px', textAlign: 'center', color: 'var(--text-dim)', fontSize: 14 }}>
-        Đang tải...
+        Loading...
       </div>
     );
   }
@@ -285,10 +285,10 @@ const Dashboard = () => {
   const weekTotalCount    = chartData.reduce((s, d) => s + (d['Check-in'] || 0), 0);
 
   const isToday        = selectedDate === TODAY;
-  const dateCardLabel  = isToday ? 'Check-in hôm nay' : `Check-in ngày ${fmt(selectedDate)}`;
+  const dateCardLabel  = isToday ? 'Check-in today' : `Check-in at ${fmt(selectedDate)}`;
   const weekCardLabel  = isCurrentWeek
-    ? 'Check-in tuần này'
-    : `Check-in tuần ${fmt(weekStart)} - ${fmt(addDays(weekStart, 6))}`;
+    ? 'Check-in this week'
+    : `Check-in week ${fmt(weekStart)} - ${fmt(addDays(weekStart, 6))}`;
 
   const openDateModal = () => {
     setModalDateOpen(true);
@@ -331,7 +331,7 @@ const Dashboard = () => {
   );
 
   if (totalEmployees === null) {
-    return <div className="page"><p style={{ color: 'var(--text-dim)' }}>Đang tải dữ liệu...</p></div>;
+    return <div className="page"><p style={{ color: 'var(--text-dim)' }}>Loading data...</p></div>;
   }
 
   const lateCount   = lateEmployees === null   ? null : lateEmployees.length;
@@ -339,7 +339,7 @@ const Dashboard = () => {
 
   return (
     <div className="page">
-      <PageHeader icon={LayoutDashboard} title="Dashboard" subtitle="Tổng quan hệ thống" />
+      <PageHeader icon={LayoutDashboard} title="Dashboard" subtitle="System Overview" />
 
       {/* ── stat cards ── */}
       <div style={{
@@ -351,7 +351,7 @@ const Dashboard = () => {
         <StatCard
           icon={Users}
           value={totalEmployees}
-          label="Tổng nhân viên"
+          label="Total Employees"
           onClick={() => navigate('/users')}
         />
         <StatCard
@@ -369,14 +369,14 @@ const Dashboard = () => {
         <StatCard
           icon={AlarmClock}
           value={lateCount}
-          label="Đi muộn hôm nay"
+          label="Late today"
           color="amber"
           onClick={() => setShowLateModal(true)}
         />
         <StatCard
           icon={UserX}
           value={absentCount}
-          label="Vắng mặt hôm nay"
+          label="Absent today"
           color="red"
           onClick={() => setShowAbsentModal(true)}
         />
@@ -396,7 +396,7 @@ const Dashboard = () => {
 
         {chartLoading ? (
           <div style={{ height: 280, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dim)', fontSize: 14 }}>
-            Đang tải...
+            Loading...
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={280}>
@@ -421,18 +421,18 @@ const Dashboard = () => {
       {/* ── modal: check-in by date ── */}
       {modalDateOpen && (
         <Modal
-          title={`Đã điểm danh ${isToday ? 'hôm nay' : `ngày ${fmt(selectedDate)}`} (${modalDateRows ? modalDateRows.length : '...'})`}
+          title={`Attendance ${isToday ? 'today' : `on ${fmt(selectedDate)}`} (${modalDateRows ? modalDateRows.length : '...'})`}
           onClose={() => setModalDateOpen(false)}
         >
           <ModalTable
             columns={[
-              { key: 'employee_code', label: 'Mã NV' },
-              { key: 'employee_name', label: 'Tên NV', render: (val) => val ?? '—' },
-              { key: 'checkin_time',  label: 'Giờ check-in' },
-              { key: 'is_active',     label: 'Trạng thái', render: (val) => <StatusBadge isActive={val} /> },
+              { key: 'employee_code', label: 'Employee ID' },
+              { key: 'employee_name', label: 'Employee Name', render: (val) => val ?? '—' },
+              { key: 'checkin_time',  label: 'Check-in time' },
+              { key: 'is_active',     label: 'Status', render: (val) => <StatusBadge isActive={val} /> },
             ]}
             rows={modalDateRows}
-            emptyText="Chưa có ai điểm danh ngày này"
+            emptyText="No attendance records for this day"
           />
         </Modal>
       )}
@@ -445,13 +445,13 @@ const Dashboard = () => {
         >
           <ModalTable
             columns={[
-              { key: 'employee_code', label: 'Mã NV' },
-              { key: 'employee_name', label: 'Tên NV', render: (val) => val ?? '—' },
-              { key: 'checkin_count', label: 'Số lần' },
-              { key: 'is_active',     label: 'Trạng thái', render: (val) => <StatusBadge isActive={val} /> },
+              { key: 'employee_code', label: 'Employee ID' },
+              { key: 'employee_name', label: 'Employee Name', render: (val) => val ?? '—' },
+              { key: 'checkin_count', label: 'Check-in count' },
+              { key: 'is_active',     label: 'Status', render: (val) => <StatusBadge isActive={val} /> },
             ]}
             rows={modalWeekRows}
-            emptyText="Chưa có check-in nào tuần này"
+            emptyText="No check-ins this week"
           />
         </Modal>
       )}
@@ -459,16 +459,16 @@ const Dashboard = () => {
       {/* ── modal: late today ── */}
       {showLateModal && (
         <Modal
-          title={`Đi muộn hôm nay (${lateEmployees ? lateEmployees.length : '...'})`}
+          title={`Late today (${lateEmployees ? lateEmployees.length : '...'})`}
           onClose={() => setShowLateModal(false)}
         >
           <ModalTable
             columns={[
-              { key: 'id',            label: 'STT',           render: (_, __, i) => i + 1 },
-              { key: 'employee_code', label: 'Mã NV' },
-              { key: 'name',          label: 'Họ tên' },
-              { key: 'check_in_time', label: 'Giờ check-in',  render: (v) => formatTime(v) },
-              { key: 'status',        label: 'Trễ',           render: (v) => {
+              { key: 'id',            label: 'No.',           render: (_, __, i) => i + 1 },
+              { key: 'employee_code', label: 'Employee ID' },
+              { key: 'name',          label: 'Name' },
+              { key: 'check_in_time', label: 'Check-in time',  render: (v) => formatTime(v) },
+              { key: 'status',        label: 'Late',           render: (v) => {
                 const mins = v?.startsWith('late:') ? v.split(':')[1] : '?';
                 return (
                   <span style={{ color: '#b45309', fontWeight: 700, fontSize: 13 }}>
@@ -478,7 +478,7 @@ const Dashboard = () => {
               }},
             ]}
             rows={lateEmployees}
-            emptyText="Không có ai đi muộn hôm nay"
+            emptyText="No late arrivals today."
           />
         </Modal>
       )}
@@ -486,18 +486,18 @@ const Dashboard = () => {
       {/* ── modal: absent today ── */}
       {showAbsentModal && (
         <Modal
-          title={`Vắng mặt hôm nay (${absentEmployees ? absentEmployees.length : '...'})`}
+          title={`Absent today (${absentEmployees ? absentEmployees.length : '...'})`}
           onClose={() => setShowAbsentModal(false)}
         >
           <ModalTable
             columns={[
-              { key: 'id',            label: 'STT',       render: (_, __, i) => i + 1 },
-              { key: 'employee_code', label: 'Mã NV' },
-              { key: 'name',          label: 'Họ tên' },
+              { key: 'id',            label: 'No.',       render: (_, __, i) => i + 1 },
+              { key: 'employee_code', label: 'Employee ID' },
+              { key: 'name',          label: 'Name' },
             ]}
             rows={absentEmployees}
-            emptyText="Không có ai vắng mặt hôm nay"
-            footer="Tính sau 17:00 — nhân viên không có check-in nào được ghi nhận trong ngày."
+            emptyText="No absentees today."
+            footer="After 17:00 — no check-ins recorded today for this employee."
           />
         </Modal>
       )}
