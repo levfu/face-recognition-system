@@ -60,7 +60,7 @@ class LivenessDetector:
                 return LivenessResult(
                     is_live=False,
                     score=anti_score,
-                    message=f"Phat hien gia mao (score={anti_score:.2f})"
+                    message=f"Spoofing detected (score={anti_score:.2f})"
                 )
 
             return LivenessResult(is_live=True, score=anti_score, message="OK")
