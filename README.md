@@ -1,54 +1,54 @@
-# Hệ Thống Nhận Diện Khuôn Mặt
+# Face Recognition System
 
-Hệ thống điểm danh và kiểm soát ra vào bằng nhận diện khuôn mặt thời gian thực. Dự án được triển khai theo mô hình microservices và chạy toàn bộ bằng Docker Compose, giúp bạn khởi động hệ thống chỉ với một lệnh.
+A real-time face recognition system for employee attendance and access control. The project follows a microservices architecture and runs entirely with Docker Compose — get the system up and running with a single command.
 
-## Tính năng chính
+## Key Features
 
-- **Nhận diện khuôn mặt thời gian thực** tại kiosk, hiển thị kết quả ngay trên giao diện
-- **Đăng ký nhân viên** bằng cách quét nhiều góc khuôn mặt để tăng độ chính xác
-- **Chống giả mạo (liveness)** để phân biệt người thật với ảnh in hoặc màn hình điện thoại
-- **Trang quản trị** để quản lý nhân viên, xem lịch sử ra vào kèm ảnh và điều chỉnh tham số hệ thống
-- **Phân quyền 2 cấp** (Super Admin / Admin) với reset mật khẩu và đổi mật khẩu cá nhân
-- **Nhật ký hoạt động** ghi lại các thao tác quản trị (tạo/xóa/đổi mật khẩu/cập nhật cài đặt)
-- **Multi-frame consensus**: chỉ ghi log khi 3 frame liên tiếp đồng thuận
-- **Gating thông minh**: phát hiện che mặt, nhắm mắt, mặt quá xa/gần — chặn frame không hợp lệ trước khi gửi backend
-- **Soft delete nhân viên**: giữ lịch sử check-in cũ, hiện badge "Đã nghỉ việc"
-- **Chống spam log**: 1 check-in/ngày/nhân viên, bỏ qua ghi log với người lạ
-- **Dashboard drill-down**: click thẻ thống kê → modal chi tiết theo ngày/tuần
-- **Health check endpoint** `/api/health` kiểm tra trạng thái 4 service realtime
+- **Real-time face recognition** at the kiosk with instant results on the interface
+- **Employee enrollment** by scanning multiple face angles for higher accuracy
+- **Liveness detection (anti-spoofing)** to distinguish real faces from printed photos or phone screens
+- **Admin dashboard** to manage employees, view access history with snapshots, and adjust system parameters
+- **Two-tier access control** (Super Admin / Admin) with password reset and personal password change
+- **Audit log** recording all admin actions (create/delete/change password/update settings)
+- **Multi-frame consensus**: only commits a log after 3 consecutive frames agree on the same person
+- **Smart gating**: detects covered face, closed eyes, face too far/close — blocks invalid frames before sending to backend
+- **Soft delete employees**: preserves old check-in history, shows "Resigned" badge
+- **Anti-spam logging**: 1 check-in per day per employee, ignores unknown faces
+- **Dashboard drill-down**: click a stat card → detail modal by day/week
+- **Health check endpoint** `/api/health` monitors the status of all 4 services in real time
 
-## Công nghệ sử dụng
+## Tech Stack
 
-| Thành phần | Công nghệ |
+| Component | Technology |
 |------------|-----------|
 | Backend | FastAPI (Python 3.10) |
-| Frontend | React + Vite (2 ứng dụng: Kiosk & Admin) |
+| Frontend | React + Vite (2 apps: Kiosk & Admin) |
 | Reverse proxy | Nginx |
-| CSDL quan hệ | PostgreSQL |
-| CSDL vector | Qdrant |
-| Lưu trữ ảnh | MinIO |
-| Hàng đợi tác vụ | Redis + Celery |
-| Triển khai | Docker Compose |
+| Relational DB | PostgreSQL |
+| Vector DB | Qdrant |
+| Image storage | MinIO |
+| Task queue | Redis + Celery |
+| Deployment | Docker Compose |
 
-**Pipeline AI:** MTCNN (phát hiện mặt) → MiniFASNet (chống giả mạo) → ArcFace (embedding 512 chiều) → MediaPipe FaceLandmarker (landmark 3D cho fusion matching) → Qdrant (cosine similarity search) → Multi-frame consensus (3 frame liên tiếp cùng person mới commit log).
+**AI Pipeline:** MTCNN (face detection) → MiniFASNet (anti-spoofing) → ArcFace (512-dim embedding) → MediaPipe FaceLandmarker (3D landmarks for fusion matching) → Qdrant (cosine similarity search) → Multi-frame consensus (3 consecutive frames with same person before committing log).
 
-## Kiến trúc hệ thống
+## System Architecture
 
-Hệ thống được tổ chức theo tầng:
+The system is organized into layers:
 
-1. **Người dùng** truy cập vào giao diện Kiosk hoặc Admin
-2. **Nginx** làm reverse proxy, nhận yêu cầu và chuyển tiếp
-3. **Frontend** hiển thị giao diện người dùng và quản trị
-4. **Backend API + lõi AI** xử lý nhận diện, xác thực và lưu trữ dữ liệu
-5. **Celery/Redis** xử lý các tác vụ nền như đăng ký, lưu snapshot và backup
-6. **PostgreSQL, Qdrant và MinIO** lưu trữ dữ liệu quan hệ, vector và ảnh
+1. **Users** access the Kiosk or Admin interface
+2. **Nginx** acts as a reverse proxy, receiving and forwarding requests
+3. **Frontend** renders the user and admin interfaces
+4. **Backend API + AI core** handles recognition, authentication, and data storage
+5. **Celery/Redis** handles background tasks such as enrollment, snapshot saving, and backup
+6. **PostgreSQL, Qdrant, and MinIO** store relational data, vectors, and images respectively
 
-Kiosk gửi luồng camera tới backend qua WebSocket, còn trang quản trị gọi API qua REST. Các tác vụ nặng được đẩy vào hàng đợi Redis để worker xử lý nền.
+The Kiosk streams camera frames to the backend via WebSocket, while the Admin panel communicates via REST API. Heavy tasks are pushed into the Redis queue for background worker processing.
 
 ```mermaid
 graph LR
-    EU["Người dùng Kiosk"]
-    ADM["Quản trị viên"]
+    EU["Kiosk User"]
+    ADM["Administrator"]
 
     NGINX{{"Nginx<br/>Reverse Proxy"}}
 
@@ -63,7 +63,7 @@ graph LR
 
     PG[("PostgreSQL")]
     QDRANT[("Qdrant<br/>Vectors 512d")]
-    MINIO[("MinIO<br/>Ảnh khuôn mặt")]
+    MINIO[("MinIO<br/>Face Images")]
 
     EU --> NGINX
     ADM --> NGINX
@@ -96,38 +96,38 @@ graph LR
     class PG,QDRANT,MINIO store
 ```
 
-## Yêu cầu hệ thống
+## System Requirements
 
-- **Docker Desktop** phải được mở trước khi chạy
-- **Git** để clone repository
-- Nếu muốn dùng GPU: máy phải có **NVIDIA GPU** và Docker hỗ trợ GPU
+- **Docker Desktop** must be running before starting the system
+- **Git** to clone the repository
+- For GPU acceleration: machine must have an **NVIDIA GPU** with Docker GPU support enabled
 
-## Cài đặt & chạy
+## Installation & Running
 
-### 1. Clone dự án
+### 1. Clone the repository
 
 ```bash
 git clone <repo-url>
-cd <ten-thu-muc>
+cd <project-folder>
 ```
 
-### 2. Đảm bảo Docker Desktop đang chạy
+### 2. Make sure Docker Desktop is running
 
-Mở Docker Desktop trước khi thực hiện lệnh. Nếu Docker chưa sẵn sàng, compose sẽ báo lỗi hoặc bị timeout khi build image.
+Open Docker Desktop before running any commands. If Docker is not ready, compose will throw errors or timeout during image build.
 
-### 3. Chạy hệ thống
+### 3. Start the system
 
-#### Cách 1 — Chạy tiêu chuẩn (tất cả máy)
+#### Option 1 — Standard (all machines)
 
 ```bash
 docker compose up -d
 ```
 
-- Hệ thống sẽ chạy ở chế độ **CPU**.
-- Lần chạy đầu tiên có thể mất vài phút do build image.
-- Các container sẽ được khởi động tự động và chạy nền.
+- The system will run in **CPU** mode.
+- First run may take a few minutes to build images.
+- Containers will start automatically and run in the background.
 
-#### Cách 2 — Tự động dùng GPU (nếu máy hỗ trợ)
+#### Option 2 — Auto GPU detection (if supported)
 
 ```bash
 # Windows
@@ -137,159 +137,159 @@ start.bat
 ./start.sh
 ```
 
-Script sẽ tự kiểm tra GPU NVIDIA và Docker hỗ trợ GPU. Nếu phù hợp, hệ thống sẽ chạy ở chế độ **GPU**; nếu không, sẽ fallback về **CPU** tự động.
+The script auto-detects whether an NVIDIA GPU and Docker GPU support are available. If compatible, the system runs in **GPU** mode; otherwise it falls back to **CPU** automatically.
 
-### 4. Kiểm tra trạng thái
+### 4. Check status
 
-Nếu muốn kiểm tra container đang chạy:
+To verify running containers:
 
 ```bash
 docker compose ps
 ```
 
-Nếu cần xem log:
+To view logs:
 
 ```bash
 docker compose logs -f
 ```
 
-## Truy cập giao diện
+## Accessing the Interface
 
-| Giao diện | Địa chỉ | Ghi chú |
-|-----------|---------|--------|
-| Kiosk (nhận diện) | http://localhost | Dùng cho quét khuôn mặt tại kiosk |
-| Quản trị (Admin) | http://localhost:5174 | Trang quản trị hệ thống |
-| Qdrant dashboard | http://localhost:6333/dashboard | Xem vector embeddings |
-| MinIO console | http://localhost:9001 | Xem ảnh đã lưu (`minioadmin` / `minioadmin123`) |
-| Health check | http://localhost/api/health | JSON trạng thái 4 service backend |
+| Interface | URL | Notes |
+|-----------|-----|-------|
+| Kiosk (recognition) | http://localhost | Used for face scanning at the kiosk |
+| Admin dashboard | http://localhost:5174 | System administration panel |
+| Qdrant dashboard | http://localhost:6333/dashboard | Inspect vector embeddings |
+| MinIO console | http://localhost:9001 | View stored images (`minioadmin` / `minioadmin123`) |
+| Health check | http://localhost/api/health | JSON status of all 4 backend services |
 
-### Tài khoản quản trị mặc định
+### Default Admin Credentials
 
-- **Tên đăng nhập:** `admin`
-- **Mật khẩu:** `admin123`
+- **Username:** `admin`
+- **Password:** `admin123`
 
-> Nên đổi mật khẩu ngay sau khi triển khai để đảm bảo an toàn.
+> Change the password immediately after deployment to ensure security.
 
-> ⚠️ **BẮT BUỘC** đổi `JWT_SECRET` (`.env`) và mật khẩu admin trước khi public hệ thống.
-> Mặc định `admin / admin123` CHỈ dành cho local development.
+> ⚠️ **REQUIRED**: Change `JWT_SECRET` (in `.env`) and the admin password before exposing the system publicly.
+> The default `admin / admin123` is for **local development only**.
 
-### Khởi tạo / Reset tài khoản admin
+### Initialize / Reset Admin Account
 
-Hệ thống **tự động tạo super admin** (`admin / admin123`) khi database rỗng — lần đầu chạy hoặc sau `docker compose down -v`. Bạn KHÔNG cần làm gì thêm.
+The system **automatically creates a super admin** (`admin / admin123`) when the database is empty — on first run or after `docker compose down -v`. No manual setup needed.
 
-Nếu muốn reset thủ công (vd: bị khóa tài khoản, hoặc seed dữ liệu mẫu để test):
+To reset manually (e.g. locked out of account, or seeding sample data for testing):
 
 ```bash
 docker compose exec backend python /scripts/seed_db.py
 ```
 
-Script này tạo:
-- Super admin: `admin / admin123` (nếu chưa có)
-- 4 nhân viên mẫu (EMP001–EMP004) cho test enrollment
+This script creates:
+- Super admin: `admin / admin123` (if not already present)
+- 4 sample employees (EMP001–EMP004) for enrollment testing
 
-### Nếu không mở được trang
+### If the page doesn't load
 
-- Đợi 1–2 phút để các container khởi động xong
-- Kiểm tra lại Docker Desktop đã chạy
-- Chạy `docker compose ps` để xác nhận các service đang `Up`
-- Xem log bằng `docker compose logs -f`
+- Wait 1–2 minutes for all containers to finish starting up
+- Make sure Docker Desktop is running
+- Run `docker compose ps` to confirm all services are `Up`
+- Check logs with `docker compose logs -f`
 
-## Cấu hình môi trường
+## Environment Configuration
 
-Hệ thống **có thể chạy ngay với mặc định**, không bắt buộc tạo `.env`.
+The system **works out of the box with defaults** — creating a `.env` file is not required.
 
-Nếu bạn muốn tùy chỉnh cấu hình, hãy sao chép `.env.example` thành `.env` và chỉnh các biến sau:
+To customize the configuration, copy `.env.example` to `.env` and adjust the following:
 
-- `JWT_SECRET` — nên đổi sang chuỗi ngẫu nhiên dài trước khi dùng thật
-- Các thông tin kết nối CSDL và dịch vụ khác
-- Các biến liên quan đến backup như `BACKUP_HOST_DIR`, `BACKUP_RETENTION_DAYS`, `BACKUP_INCLUDE_MINIO`
+- `JWT_SECRET` — replace with a long random string before production use
+- Database and service connection strings
+- Backup-related variables: `BACKUP_HOST_DIR`, `BACKUP_RETENTION_DAYS`, `BACKUP_INCLUDE_MINIO`
 
-## Cấu trúc dự án
+## Project Structure
 
 ```
 .
-├── backend/                # Dịch vụ FastAPI + lõi AI
+├── backend/                # FastAPI service + AI core
 │   ├── app/                # Source code (api, core, db, services, workers)
 │   ├── tests/              # Pytest test suite
 │   └── Dockerfile
-├── cloudflare              # Triển khai lên Internet bằng Cloudflare
-├── frontend-admin/         # Giao diện quản trị (React + Vite)
-├── frontend-user/          # Giao diện Kiosk (React + Vite)
-├── models/                 # Trọng số AI (best_model.pth, face_landmarker.task)
-├── nginx/                  # Cấu hình reverse proxy
+├── cloudflare/             # Internet deployment via Cloudflare Tunnel
+├── frontend-admin/         # Admin interface (React + Vite)
+├── frontend-user/          # Kiosk interface (React + Vite)
+├── models/                 # AI weights (best_model.pth, face_landmarker.task)
+├── nginx/                  # Reverse proxy configuration
 ├── scripts/                # Backup utilities + offline data prep
 ├── secrets/                # Service account JSON (gitignored)
-├── docker-compose.yml      # Cấu hình triển khai (CPU)
-├── docker-compose.gpu.yml  # Lớp phủ tùy chọn cho GPU
-├── start.bat / start.sh    # Script khởi động tự dò GPU
-└── .env.example            # Mẫu biến môi trường
+├── docker-compose.yml      # Standard deployment config (CPU)
+├── docker-compose.gpu.yml  # Optional GPU override layer
+├── start.bat / start.sh    # Auto GPU-detection startup scripts
+└── .env.example            # Environment variable template
 ```
 
-## Triển khai ra Internet với Cloudflare Tunnel 
+## Deploying to the Internet with Cloudflare Tunnel
 
-Dùng Cloudflare Tunnel thay vì mở port — **không cần public IP, không cần VPS**, chạy trên máy local vẫn truy cập được qua Internet với SSL miễn phí.
+Uses Cloudflare Tunnel instead of opening ports — **no public IP needed, no VPS required**. Run on a local machine and access over the Internet with automatic free SSL.
 
-### Kiến trúc
+### Architecture
 
 ```
 Internet
   │
   ▼
-Cloudflare Edge (SSL tự động)
+Cloudflare Edge (automatic SSL)
   │
-  ▼  (qua tunnel mã hóa)
+  ▼  (encrypted tunnel)
 cloudflared container
   │
   ▼
 nginx:80 (reverse proxy)
-  ├── /api/  → backend:8000
-  ├── /ws/   → backend:8000 (WebSocket)
-  ├── /admin/→ frontend-admin:80
-  └── /      → frontend-user:80
+  ├── /api/   → backend:8000
+  ├── /ws/    → backend:8000 (WebSocket)
+  ├── /admin/ → frontend-admin:80
+  └── /       → frontend-user:80
 ```
 
 ---
 
-### Bước 1 — Chuẩn bị Cloudflare
+### Step 1 — Set up Cloudflare
 
-1. Đăng ký tài khoản tại [cloudflare.com](https://cloudflare.com) (miễn phí)
-2. Thêm domain vào Cloudflare (mua tại Cloudflare hoặc dùng domain có sẵn)
-3. Cài `cloudflared` trên máy host:
+1. Register a free account at [cloudflare.com](https://cloudflare.com)
+2. Add your domain to Cloudflare (purchase via Cloudflare or use an existing domain)
+3. Install `cloudflared` on the host machine:
 
 ```bash
 # Ubuntu/Debian
 curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb -o cloudflared.deb
 sudo dpkg -i cloudflared.deb
 
-# Kiểm tra
+# Verify
 cloudflared --version
 ```
 
 ---
 
-### Bước 2 — Tạo tunnel và lấy credentials
+### Step 2 — Create tunnel and get credentials
 
 ```bash
-# Đăng nhập Cloudflare (mở browser tự động)
+# Log in to Cloudflare (opens browser automatically)
 cloudflared tunnel login
 
-# Tạo tunnel
+# Create the tunnel
 cloudflared tunnel create face-recognition
 ```
 
-Lệnh tạo tunnel sẽ in ra:
+The command will output:
 ```
 Tunnel credentials written to /root/.cloudflared/<TUNNEL_ID>.json
 Created tunnel face-recognition with id <TUNNEL_ID>
 ```
 
-> ⚠️ **Lưu lại `TUNNEL_ID`** — cần dùng ở bước tiếp theo.
+> ⚠️ **Save the `TUNNEL_ID`** — you will need it in the next steps.
 
 ---
 
-### Bước 3 — Cấu hình tunnel
+### Step 3 — Configure the tunnel
 
-Tạo file `cloudflare/config.yml`:
+Create `cloudflare/config.yml`:
 
 ```yaml
 tunnel: <TUNNEL_ID>
@@ -308,26 +308,26 @@ ingress:
   - service: http_status:404
 ```
 
-> 💡 Cả 2 hostname đều trỏ về `nginx:80`. Nginx sẽ phân route dựa trên **path** (`/admin/` vs `/`).
+> 💡 Both hostnames point to `nginx:80`. Nginx routes traffic based on **path** (`/admin/` vs `/`).
 
 ---
 
-### Bước 4 — Cấu hình DNS trên Cloudflare dashboard
+### Step 4 — Configure DNS on Cloudflare dashboard
 
-Vào **Cloudflare dashboard → DNS → Add record**, thêm 2 CNAME:
+Go to **Cloudflare dashboard → DNS → Add record** and add 2 CNAME entries:
 
 | Type | Name | Target | Proxy |
-|---|---|---|---|
-| CNAME | face | `<TUNNEL_ID>.cfargotunnel.com` |  ON (màu cam) |
-| CNAME | admin.face | `<TUNNEL_ID>.cfargotunnel.com` |  ON (màu cam) |
+|------|------|--------|-------|
+| CNAME | face | `<TUNNEL_ID>.cfargotunnel.com` | ✅ ON (orange) |
+| CNAME | admin.face | `<TUNNEL_ID>.cfargotunnel.com` | ✅ ON (orange) |
 
-> ⚠️ Proxy phải **ON** — bắt buộc để có SSL tự động.
+> ⚠️ Proxy must be **ON** — required for automatic SSL.
 
 ---
 
-### Bước 5 — Docker Compose
+### Step 5 — Docker Compose
 
-`cloudflared` đã được khai báo trong `docker-compose.yml`:
+`cloudflared` is already declared in `docker-compose.yml`:
 
 ```yaml
 cloudflared:
@@ -335,26 +335,26 @@ cloudflared:
   command: tunnel --config /etc/cloudflared/config.yml run
   volumes:
     - ./cloudflare/config.yml:/etc/cloudflared/config.yml
-    - ~/.cloudflared:/root/.cloudflared:ro   # thư mục chứa credentials JSON
+    - ~/.cloudflared:/root/.cloudflared:ro   # directory containing credentials JSON
   depends_on:
     - nginx
   restart: unless-stopped
 ```
 
-> ⚠️ Thư mục `~/.cloudflared/` trên máy host phải chứa file `<TUNNEL_ID>.json` (được tạo ở Bước 2). File này **không commit lên GitHub**.
+> ⚠️ The `~/.cloudflared/` directory on the host must contain the `<TUNNEL_ID>.json` file created in Step 2. **Do not commit this file to GitHub.**
 
 ---
 
-### Bước 6 — Khởi động
+### Step 6 — Start the system
 
 ```bash
 docker compose up -d
 
-# Kiểm tra tunnel đã kết nối chưa
+# Check if the tunnel connected successfully
 docker compose logs -f cloudflared
 ```
 
-Log bình thường:
+Normal output:
 ```
 cloudflared | Registered tunnel connection connIndex=0
 cloudflared | Registered tunnel connection connIndex=1
@@ -362,7 +362,7 @@ cloudflared | Registered tunnel connection connIndex=1
 
 ---
 
-### Bước 7 — Kiểm tra
+### Step 7 — Verify
 
 ```bash
 # API health check
@@ -377,76 +377,76 @@ open https://admin.face.yourdomain.com
 
 ---
 
-### Lưu ý bảo mật
+### Security Notes
 
-Thêm vào `.gitignore`:
+Add to `.gitignore`:
 ```
 .cloudflared/
 ```
 
-Không commit `~/.cloudflared/<TUNNEL_ID>.json` lên GitHub — file này chứa credentials cho phép điều khiển tunnel.
+Never commit `~/.cloudflared/<TUNNEL_ID>.json` to GitHub — this file contains credentials that grant full control over the tunnel.
 
-SSL được Cloudflare cung cấp tự động — **không cần cài certbot hay Let's Encrypt**.
-
-
-
-## Sao lưu dữ liệu định kỳ
-
-Hệ thống backup được tích hợp sẵn trong backend (`backup_service.py` + `gdrive_uploader.py`).
-
-### Những gì được backup
-
-| Thành phần | File output | Ghi chú |
-|---|---|---|
-| PostgreSQL | `postgres.dump` | pg_dump custom format (`-F c`) |
-| Qdrant | `qdrant_face_embeddings.snapshot` | Snapshot toàn bộ collection |
-| MinIO | `minio/face-images/`, `minio/snapshots/` | Mặc định **tắt** |
-
-> ⚠️ **MinIO backup mặc định TẮT** (`BACKUP_INCLUDE_MINIO=false`). Ảnh gốc đã nằm trong Docker volume `minio_data` — backup volume Docker là đủ. Bật khi cần sao lưu ảnh sang nơi khác.
+SSL is provided automatically by Cloudflare — **no certbot or Let's Encrypt setup required**.
 
 ---
 
-### Cấu hình `.env`
+## Automated Data Backup
+
+The backup system is built into the backend (`backup_service.py` + `gdrive_uploader.py`).
+
+### What gets backed up
+
+| Component | Output file | Notes |
+|-----------|-------------|-------|
+| PostgreSQL | `postgres.dump` | pg_dump custom format (`-F c`) |
+| Qdrant | `qdrant_face_embeddings.snapshot` | Full collection snapshot |
+| MinIO | `minio/face-images/`, `minio/snapshots/` | **Off** by default |
+
+> ⚠️ **MinIO backup is OFF by default** (`BACKUP_INCLUDE_MINIO=false`). Original images already live in the Docker volume `minio_data` — backing up the Docker volume is sufficient. Enable only when you need to copy images elsewhere.
+
+---
+
+### `.env` Configuration
 
 ```env
-# ── Backup cơ bản ──
+# ── Core backup ──
 BACKUP_ENABLED=true
 BACKUP_DIR=/backups
-BACKUP_RETENTION_DAYS=14        # xóa backup cũ hơn 14 ngày
+BACKUP_RETENTION_DAYS=14        # delete backups older than 14 days
 
-# ── MinIO (tùy chọn) ──
-BACKUP_INCLUDE_MINIO=false       # true để backup toàn bộ ảnh gốc
+# ── MinIO (optional) ──
+BACKUP_INCLUDE_MINIO=false      # set true to backup all original images
 
-# ── Google Drive (tùy chọn) ──
+# ── Google Drive (optional) ──
 GOOGLE_DRIVE_ENABLED=false
-GOOGLE_DRIVE_AUTH_MODE=oauth     # oauth | service_account
-GOOGLE_DRIVE_FOLDER_ID=          # ID folder trên Google Drive
+GOOGLE_DRIVE_AUTH_MODE=oauth    # oauth | service_account
+GOOGLE_DRIVE_FOLDER_ID=         # Google Drive folder ID
 GOOGLE_DRIVE_OAUTH_TOKEN=./secrets/gdrive-oauth-token.json
 GOOGLE_DRIVE_CREDENTIALS=./secrets/gdrive-service-account.json
 ```
 
 ---
 
-### Kết quả mỗi lần backup
+### Backup output structure
 
 ```
 /backups/
 └── 20241201_023000/
-    ├── postgres.dump                      # dump PostgreSQL
-    ├── qdrant_face_embeddings.snapshot    # snapshot Qdrant
-    ├── minio/                             # chỉ có nếu BACKUP_INCLUDE_MINIO=true
+    ├── postgres.dump                      # PostgreSQL dump
+    ├── qdrant_face_embeddings.snapshot    # Qdrant snapshot
+    ├── minio/                             # only if BACKUP_INCLUDE_MINIO=true
     │   ├── face-images/
     │   └── snapshots/
-    └── manifest.json                      # metadata: thời gian, kích thước
+    └── manifest.json                      # metadata: timestamp, sizes
 ```
 
-Nếu `GOOGLE_DRIVE_ENABLED=true`, thư mục được nén thành `facerecog_backup_<timestamp>.tar.gz` và upload lên Google Drive. Backup cũ hơn `BACKUP_RETENTION_DAYS` ngày tự động bị xóa cả local lẫn Drive.
+If `GOOGLE_DRIVE_ENABLED=true`, the directory is compressed into `facerecog_backup_<timestamp>.tar.gz` and uploaded to Google Drive. Backups older than `BACKUP_RETENTION_DAYS` days are automatically deleted both locally and on Drive.
 
 ---
 
-### Kích hoạt backup thủ công
+### Trigger a manual backup
 
-Backup chưa được lên lịch tự động — chạy thủ công khi cần:
+Backup is not yet scheduled automatically — run manually when needed:
 
 ```bash
 docker compose exec backend python -c "
@@ -457,7 +457,7 @@ print(json.dumps(result, indent=2, ensure_ascii=False))
 "
 ```
 
-Kết quả thành công trông như sau:
+Expected output on success:
 
 ```json
 {
@@ -466,7 +466,7 @@ Kết quả thành công trông như sau:
   "components": {
     "postgres": { "file": "postgres.dump", "size_bytes": 524288 },
     "qdrant":   { "file": "qdrant_face_embeddings.snapshot", "size_bytes": 1048576 },
-    "minio":    { "skipped": true, "note": "Ảnh gốc nằm trong volume Docker minio_data" }
+    "minio":    { "skipped": true, "note": "Images are stored in Docker volume minio_data" }
   },
   "old_backups_removed": 0,
   "gdrive": { "success": true, "skipped": true, "reason": "gdrive_disabled" }
@@ -475,61 +475,61 @@ Kết quả thành công trông như sau:
 
 ---
 
-### Upload lên Google Drive (tùy chọn)
+### Upload to Google Drive (optional)
 
-Hỗ trợ 2 chế độ:
+Two authentication modes are supported:
 
-#### Cách A — OAuth (Gmail cá nhân, khuyến nghị)
+#### Option A — OAuth (personal Gmail, recommended)
 
 ```bash
-# Chạy 1 lần để xác thực, sinh ra file token
+# Run once to authenticate and generate the token file
 python scripts/gdrive_oauth_setup.py
 ```
 
-Cấu hình `.env`:
+`.env` configuration:
 ```env
 GOOGLE_DRIVE_ENABLED=true
 GOOGLE_DRIVE_AUTH_MODE=oauth
 GOOGLE_DRIVE_OAUTH_TOKEN=./secrets/gdrive-oauth-token.json
-GOOGLE_DRIVE_FOLDER_ID=<ID_folder_Google_Drive>
+GOOGLE_DRIVE_FOLDER_ID=<Google_Drive_folder_ID>
 ```
 
-File `secrets/gdrive-oauth-token.json` được sinh ra sau khi chạy `gdrive_oauth_setup.py`. **Không commit file này lên GitHub.**
+`secrets/gdrive-oauth-token.json` is generated after running `gdrive_oauth_setup.py`. **Do not commit this file to GitHub.**
 
-#### Cách B — Service Account (Google Workspace)
+#### Option B — Service Account (Google Workspace)
 
-Dùng khi có Google Workspace với Shared Drive.
+Use when you have Google Workspace with a Shared Drive.
 
-Cấu hình `.env`:
+`.env` configuration:
 ```env
 GOOGLE_DRIVE_ENABLED=true
 GOOGLE_DRIVE_AUTH_MODE=service_account
 GOOGLE_DRIVE_CREDENTIALS=./secrets/gdrive-service-account.json
-GOOGLE_DRIVE_FOLDER_ID=<ID_Shared_Drive>
+GOOGLE_DRIVE_FOLDER_ID=<Shared_Drive_ID>
 ```
 
-> ⚠️ Service Account với Google Drive **cá nhân** sẽ báo lỗi `storageQuotaExceeded` (quota = 0). Phải dùng Shared Drive hoặc chuyển sang OAuth.
+> ⚠️ Using a Service Account with a **personal** Google Drive will result in a `storageQuotaExceeded` error (quota = 0). Use a Shared Drive or switch to OAuth instead.
 
 ---
 
-### Các task chạy định kỳ (Celery Beat)
+### Scheduled tasks (Celery Beat)
 
-| Task | Thời gian | Chức năng |
-|---|---|---|
-| `cleanup_task` | 2:00 AM hàng ngày | Xóa ảnh snapshot check-in cũ hơn 30 ngày khỏi MinIO |
-| `daily_report_task` | 23:59 hàng ngày | Tổng hợp số lượt chấm công trong ngày |
+| Task | Schedule | Function |
+|------|----------|----------|
+| `cleanup_task` | 2:00 AM daily | Deletes check-in snapshot images older than 30 days from MinIO |
+| `daily_report_task` | 11:59 PM daily | Aggregates attendance count for the day |
 
 ---
 
-### Restore khi cần
+### Restore procedure
 
 ```bash
 # ── Restore PostgreSQL ──
-# Bước 1: copy file vào container
+# Step 1: copy dump file into the container
 docker cp ./backups/20241201_023000/postgres.dump \
   $(docker compose ps -q postgres):/tmp/postgres.dump
 
-# Bước 2: restore
+# Step 2: restore
 docker compose exec postgres pg_restore \
   -U admin -d facerecog -F c /tmp/postgres.dump
 
@@ -540,22 +540,22 @@ curl -X POST \
   -F "snapshot=@./backups/20241201_023000/qdrant_face_embeddings.snapshot"
 ```
 
+---
 
-
-## Dừng hệ thống
+## Stopping the System
 
 ```bash
 docker compose down
 ```
 
-Nếu muốn xóa luôn dữ liệu đã lưu (CSDL, ảnh, volume), hãy dùng:
+To also remove all stored data (databases, images, volumes):
 
 ```bash
 docker compose down -v
 ```
 
-## Ghi chú
+## Notes
 
-- CSDL tự khởi tạo cấu trúc bảng ở lần chạy đầu tiên, không cần bước thiết lập thủ công
-- Chế độ GPU chỉ là tùy chọn tăng tốc; mọi chức năng vẫn hoạt động đầy đủ ở chế độ CPU
-- Nên đổi `JWT_SECRET` và mật khẩu admin trước khi đưa hệ thống vào môi trường thật
+- The database schema is initialized automatically on first run — no manual setup required
+- GPU mode is an optional performance boost; all features work fully in CPU mode
+- Change `JWT_SECRET` and the admin password before deploying to a production environment
