@@ -2,10 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
 const STATUS_CONFIG = {
-  ok:      { color: '#10b981', label: 'Vận hành ổn định' },
-  degraded:{ color: '#f59e0b', label: 'Một số dịch vụ gặp sự cố' },
-  down:    { color: '#ef4444', label: 'Hệ thống gặp sự cố nghiêm trọng' },
-  loading: { color: '#94a3b8', label: 'Đang kiểm tra...' },
+  ok:      { color: '#10b981', label: 'Operational' },
+  degraded:{ color: '#f59e0b', label: 'Degraded Performance' },
+  down:    { color: '#ef4444', label: 'Major Outage' },
+  loading: { color: '#94a3b8', label: 'Checking...' },
 };
 
 const COMPONENT_LABELS = {
@@ -85,7 +85,7 @@ export default function HealthIndicator() {
               color:      isUnknown ? '#94a3b8' : isOk ? '#34d399' : '#f87171',
               fontWeight: 600,
             }}>
-              {isUnknown ? '…' : isOk ? '✓ Hoạt động' : '✗ Gặp sự cố'}
+              {isUnknown ? '…' : isOk ? '✓ Operational' : '✗ Outage'}
             </span>
           </div>
         );
