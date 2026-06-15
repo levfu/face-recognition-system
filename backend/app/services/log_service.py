@@ -78,7 +78,7 @@ class LogService:
             return "new_checkin"
 
         except Exception as e:
-            print(f"[LogService] Lỗi ghi log: {e}")
+            print(f"[LogService] Error log: {e}")
             db.rollback()
             return None
 
