@@ -23,23 +23,23 @@ async def recognize_stream(
     db: Session    = Depends(get_db)
 ):
     """
-    WebSocket endpoint nhận stream frame từ frontend.
-    Mỗi frame → nhận diện → trả về JSON kết quả.
-    Multi-frame consensus (N=3): chỉ log khi 3 frame liên tiếp
-    đồng thuận cùng employee_id.
+    WebSocket endpoint receiving frame stream from frontend.
+    Each frame → recognition → returns JSON result.
+    Multi-frame consensus (N=3): only log when 3 consecutive frames
+    agree on the same employee_id.
     """
     await websocket.accept()
     session_id = id(websocket)
     _session_results[session_id] = deque(maxlen=_CONSENSUS_N)
     if action not in ("check_in", "check_out"):
         action = "check_in"
-    print(f"[WS] Camera {camera_id} kết nối (action={action})", flush=True)
+    print(f"[WS] Camera {camera_id} connected (action={action})", flush=True)
 
     try:
         while True:
             message = await websocket.receive()
             if message.get("type") == "websocket.disconnect":
-                print(f"[WS] Camera {camera_id} ngắt kết nối", flush=True)
+                print(f"[WS] Camera {camera_id} disconnected", flush=True)
                 break
             frame_bytes = None
             if "bytes" in message and message["bytes"] is not None:
@@ -152,7 +152,7 @@ async def recognize_stream(
                 raise
 
     except WebSocketDisconnect:
-        print(f"[WS] Camera {camera_id} ngắt kết nối", flush=True)
+        print(f"[WS] Camera {camera_id} disconnected", flush=True)
     except Exception as e:
         import traceback
         print(f"[ERROR][WS] {type(e).__name__}: {e}", flush=True)
