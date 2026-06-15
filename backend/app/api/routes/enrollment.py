@@ -31,32 +31,32 @@ async def enroll_face(
     force=True: xóa toàn bộ data cũ rồi enroll lại.
     """
     if not 1 <= len(images) <= 10:
-        raise HTTPException(400, "Cần 1–10 ảnh mỗi lần đăng ký")
+        raise HTTPException(400, "Need 1–10 images per enrollment")
 
     images_bytes: list[bytes] = []
     total_size = 0
     for img in images:
         if img.content_type not in ["image/jpeg", "image/png"]:
-            raise HTTPException(400, f"Ảnh '{img.filename}' phải là JPEG hoặc PNG")
+            raise HTTPException(400, f"Image '{img.filename}' must be JPEG or PNG")
         data = await img.read()
         if len(data) > 10 * 1024 * 1024:
-            raise HTTPException(400, f"Ảnh '{img.filename}' quá lớn, tối đa 10MB mỗi ảnh")
+            raise HTTPException(400, f"Image '{img.filename}' is too large, maximum 10MB per image")
         total_size += len(data)
         images_bytes.append(data)
 
     if total_size > 50 * 1024 * 1024:
-        raise HTTPException(400, "Tổng dung lượng ảnh vượt quá 50MB")
+        raise HTTPException(400, "Total image size exceeds 50MB")
 
     landmarks_list = None
     if landmarks:
         try:
             landmarks_list = json.loads(landmarks)
         except Exception:
-            raise HTTPException(400, "landmarks phải là JSON hợp lệ")
+            raise HTTPException(400, "landmarks must be valid JSON")
         if len(landmarks_list) != len(images_bytes):
             raise HTTPException(
                 400,
-                f"Số landmarks ({len(landmarks_list)}) không khớp số ảnh ({len(images_bytes)})"
+                f"Number of landmarks ({len(landmarks_list)}) does not match number of images ({len(images_bytes)})"
             )
 
     result = enrollment_service.enroll(
@@ -87,7 +87,7 @@ async def enroll_bulk(
     Dùng cho trường hợp enroll nhiều góc độ.
     """
     if len(images) > 10:
-        raise HTTPException(400, "Tối đa 10 ảnh mỗi lần")
+        raise HTTPException(400, "Maximum 10 images per request")
 
     task_ids = []
     for img in images:
@@ -100,7 +100,7 @@ async def enroll_bulk(
 
     return {
         "success": True,
-        "message": f"Đang xử lý {len(images)} ảnh trong nền",
+        "message": f"Processing {len(images)} images in the background",
         "task_ids": task_ids
     }
 
@@ -121,4 +121,4 @@ def delete_face(
     ).delete()
     db.commit()
 
-    return {"success": True, "message": f"Đã xóa khuôn mặt của {person_id}"}
+    return {"success": True, "message": f"Deleted face data for {person_id}"}
