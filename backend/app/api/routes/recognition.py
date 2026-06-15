@@ -23,10 +23,10 @@ async def recognize_stream(
     db: Session    = Depends(get_db)
 ):
     """
-    WebSocket endpoint receiving frame stream from frontend.
-    Each frame → recognition → returns JSON result.
-    Multi-frame consensus (N=3): only log when 3 consecutive frames
-    agree on the same employee_id.
+    WebSocket endpoint nhận stream frame từ frontend.
+    Mỗi frame → nhận diện → trả về JSON kết quả.
+    Multi-frame consensus (N=3): chỉ log khi 3 frame liên tiếp
+    đồng thuận cùng employee_id.
     """
     await websocket.accept()
     session_id = id(websocket)
