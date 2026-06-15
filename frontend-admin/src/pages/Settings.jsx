@@ -31,7 +31,7 @@ const Settings = () => {
 
   useEffect(() => {
     if (!localStorage.getItem('adminToken')) {
-      alert("Hãy đăng nhập để có thể xem!");
+      alert("Please log in to view this.");
       window.location.href = '/login';
       return;
     }
@@ -57,20 +57,20 @@ const Settings = () => {
         },
         { headers: authHeaders() }
       );
-      alert('Đã lưu cấu hình mới thành công!');
+      alert('Configuration saved successfully!');
     } catch (error) {
-      alert('Lỗi lưu cấu hình!');
+      alert('Error saving configuration.');
     }
   };
 
   return (
     <div className="page-sm">
-      <PageHeader icon={SettingsIcon} title="Cấu Hình Hệ Thống" />
+      <PageHeader icon={SettingsIcon} title="System Configuration" />
 
       <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 15, fontWeight: 600 }}>Ngưỡng nhận diện</span>
-          <Tooltip text={"Mức tương đồng để coi 2 khuôn mặt là cùng người.\n\n• Thấp: dễ nhận, dễ nhầm người lạ\n• Cao: chặt chẽ, dễ bỏ sót nhân viên\n\nKhuyến nghị 60–80%."} />
+          <span style={{ fontSize: 15, fontWeight: 600 }}>Threshold</span>
+          <Tooltip text={"Similarity threshold to determine whether two faces belong to the same person.\n\n• Low: easier recognition, but more likely to misidentify strangers\n• High: stricter matching, but may miss valid employees\n\nRecommended range: 60–80%."} />
           <span className="settings-value" style={{ color: thresholdColor(threshold), transition: 'color 0.15s' }}>{Math.round(parseFloat(threshold) * 100)}%</span>
         </div>
 
@@ -91,14 +91,14 @@ const Settings = () => {
             checked={livenessEnabled}
             onChange={(e) => setLivenessEnabled(e.target.checked)}
           />
-          Bật kiểm tra liveness (MiniFASNet)
-          <Tooltip text="Dùng MiniFASNet để phân biệt mặt thật / ảnh in / màn hình. Tắt chỉ khi debug." />
+          Enable MiniFASNet liveness check.
+          <Tooltip text="Use MiniFASNet to detect real vs spoof faces (printed photos/screens). Disable only for debugging." />
         </label>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 14, fontWeight: 600 }}>Ngưỡng điểm liveness (MiniFASNet)</span>
-            <Tooltip text={"Điểm antispoof tối thiểu để coi là mặt thật.\n\n• Thấp (0.4–0.5): ít từ chối, dễ bị bypass\n• Cao (0.7–0.9): chặt, có thể từ chối mặt thật\n\nKhuyến nghị: 0.55–0.65."} />
+            <span style={{ fontSize: 14, fontWeight: 600 }}>MiniFASNet liveness threshold</span>
+            <Tooltip text={"Minimum anti-spoof score for real face acceptance (low 0.4–0.5 = easier but less secure, high 0.7–0.9 = stricter but may reject real users). Recommended: 0.55–0.65."} />
             <span className="settings-value" style={{ color: thresholdColor(livenessScoreMin) }}>{Math.round(parseFloat(livenessScoreMin) * 100)}%</span>
           </div>
           <input
@@ -113,7 +113,7 @@ const Settings = () => {
 
         <Button variant="primary" onClick={handleSave} style={{ marginTop: 20, alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: 8 }}>
           <Save size={16} />
-          Lưu Cài Đặt
+          Save setting
         </Button>
       </div>
     </div>
