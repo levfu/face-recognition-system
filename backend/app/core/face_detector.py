@@ -105,7 +105,7 @@ class FaceDetector:
         except ValueError:
             return DetectionOutcome(face=None, no_face_in_zone=False)
         except Exception as e:
-            print(f"[FaceDetector] Lỗi: {e}")
+            print(f"[FaceDetector] Error: {e}")
             return DetectionOutcome(face=None, no_face_in_zone=False)
 
     def detect_from_bytes(self, image_bytes: bytes, apply_oval_gate: bool = True) -> DetectionOutcome:
