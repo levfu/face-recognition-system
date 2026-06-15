@@ -46,7 +46,7 @@ export default function RecognitionResult({ result }) {
   if (!displayResult) {
     return (
       <div className={`recognition-card recognition-idle ${animClass}`}>
-        <p>Đang chờ nhận diện...</p>
+        <p>Waiting for recognition...</p>
       </div>
     );
   }
@@ -54,8 +54,8 @@ export default function RecognitionResult({ result }) {
   if (displayResult.spoof) {
     return (
       <div className={`recognition-card recognition-spoof ${animClass}`}>
-        <div className="result-label" style={{ color: '#b91c1c' }}>Phát hiện ảnh giả mạo</div>
-        <div className="result-meta"><span>Vui lòng nhìn trực tiếp vào camera</span></div>
+        <div className="result-label" style={{ color: '#b91c1c' }}>Spoof detected.</div>
+        <div className="result-meta"><span>Please look directly at the camera.</span></div>
       </div>
     );
   }
@@ -63,7 +63,7 @@ export default function RecognitionResult({ result }) {
   if (displayResult.unknown) {
     return (
       <div className={`recognition-card recognition-unknown ${animClass}`}>
-        <p>Không nhận diện được nhân viên này</p>
+        <p>Unable to recognize this employee.</p>
       </div>
     );
   }
@@ -73,8 +73,8 @@ export default function RecognitionResult({ result }) {
     const dots = [0, 1, 2].map(i => i < count ? '●' : '○').join(' ');
     return (
       <div className={`recognition-card recognition-pending ${animClass}`}>
-        <div className="result-label" style={{ color: '#92400e' }}>Đang xác nhận danh tính...</div>
-        <div className="result-meta"><span>Vui lòng giữ nguyên vị trí</span></div>
+        <div className="result-label" style={{ color: '#92400e' }}>Verifying your identity...</div>
+        <div className="result-meta"><span>Please remain still.</span></div>
         <div style={{ fontSize: 22, letterSpacing: 6, marginTop: 10, color: '#b45309' }}>{dots}</div>
       </div>
     );
@@ -87,10 +87,10 @@ export default function RecognitionResult({ result }) {
     const timeStr = checkin_time ? formatTimeShort(checkin_time) : formatTimeShort(timestamp);
     return (
       <div className={`recognition-card recognition-checkout-success ${animClass}`}>
-        <div className="result-label">Check-out thành công</div>
+        <div className="result-label">Successfully checked out.</div>
         <div className="result-name">{capitalizeName(name || '')}!</div>
         <div className="result-meta">
-          <span>Đã check-out lúc {timeStr} • Độ tin cậy: {(confidence * 100).toFixed(1)}%</span>
+          <span>Successfully checked out at {timeStr} • Confidence: {(confidence * 100).toFixed(1)}%</span>
         </div>
       </div>
     );
@@ -101,10 +101,10 @@ export default function RecognitionResult({ result }) {
     const timeStr = checkin_time ? formatTimeShort(checkin_time) : formatTimeShort(timestamp);
     return (
       <div className={`recognition-card recognition-success ${animClass}`}>
-        <div className="result-label">Nhận diện thành công</div>
-        <div className="result-name">Xin chào, {capitalizeName(name || '')}!</div>
+        <div className="result-label">Recognition successful.</div>
+        <div className="result-name">Hello, {capitalizeName(name || '')}!</div>
         <div className="result-meta">
-          <span>Đã check-in lúc {timeStr} • Độ tin cậy: {(confidence * 100).toFixed(1)}%</span>
+          <span>Successfully checked in at {timeStr} • Confidence: {(confidence * 100).toFixed(1)}%</span>
         </div>
       </div>
     );
@@ -114,12 +114,12 @@ export default function RecognitionResult({ result }) {
   if (status === 'already_checked_in') {
     return (
       <div className={`recognition-card recognition-checkedin ${animClass}`}>
-        <div className="result-label" style={{ color: '#0ea5e9', opacity: 1 }}>Đã điểm danh hôm nay</div>
+        <div className="result-label" style={{ color: '#0ea5e9', opacity: 1 }}>Already checked in today.</div>
         <div className="result-name" style={{ color: '#0369a1' }}>
           Xin chào, {capitalizeName(name || '')}!
         </div>
         <div className="result-meta">
-          <span>{checkin_message || 'Bạn đã check-in hôm nay rồi'}</span>
+          <span>{checkin_message || 'Already checked in today.'}</span>
         </div>
       </div>
     );
@@ -129,12 +129,12 @@ export default function RecognitionResult({ result }) {
   if (status === 'already_checked_out') {
     return (
       <div className={`recognition-card recognition-checkedin ${animClass}`}>
-        <div className="result-label" style={{ color: '#0ea5e9', opacity: 1 }}>Đã check-out hôm nay</div>
+        <div className="result-label" style={{ color: '#0ea5e9', opacity: 1 }}>Already checked out today.</div>
         <div className="result-name" style={{ color: '#0369a1' }}>
           {capitalizeName(name || '')}
         </div>
         <div className="result-meta">
-          <span>{checkin_message || 'Bạn đã check-out hôm nay rồi'}</span>
+          <span>{checkin_message || 'Already checked out today.'}</span>
         </div>
       </div>
     );
@@ -144,10 +144,10 @@ export default function RecognitionResult({ result }) {
   if (status === 'no_checkin_yet') {
     return (
       <div className={`recognition-card recognition-no-checkin ${animClass}`}>
-        <div className="result-label" style={{ color: '#b91c1c' }}>Chưa check-in</div>
+        <div className="result-label" style={{ color: '#b91c1c' }}>Not checked in yet.</div>
         <div style={{ fontWeight: 600, marginTop: 4 }}>{capitalizeName(name || '')}</div>
         <div className="result-meta">
-          <span>{checkin_message || 'Bạn chưa check-in hôm nay. Vui lòng check-in trước.'}</span>
+          <span>{checkin_message || 'Not checked in yet.'}</span>
         </div>
       </div>
     );
@@ -156,12 +156,12 @@ export default function RecognitionResult({ result }) {
   // Fallback for any other status
   return (
     <div className={`recognition-card recognition-checkedin ${animClass}`}>
-      <div className="result-label" style={{ color: '#0ea5e9', opacity: 1 }}>Đã điểm danh hôm nay</div>
+      <div className="result-label" style={{ color: '#0ea5e9', opacity: 1 }}>Already checked in today.</div>
       <div className="result-name" style={{ color: '#0369a1' }}>
         Xin chào, {capitalizeName(name || '')}!
       </div>
       <div className="result-meta">
-        <span>{checkin_message || 'Bạn đã điểm danh hôm nay rồi'}</span>
+        <span>{checkin_message || 'Already checked in today.'}</span>
       </div>
     </div>
   );
