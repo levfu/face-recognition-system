@@ -15,10 +15,10 @@ const MIN_FACE_H = 0.45;
 const MAX_FACE_H = 0.72;
 
 // Ellipse geometry — viewBox 0-100, center (50,50)
-// RX=20 ↔ 40% parent width, RY=36 ↔ 72% parent height (khớp OVAL gate)
+// RX=20 ↔ 40% parent width, RY=36 ↔ 72% parent height (matches OVAL gate)
 const RX = 20;
 const RY = 36;
-const HALF_SPAN = 18;  // mỗi cung 36° (gap 9° hai bên)
+const HALF_SPAN = 18;  // each arc 36° (gap 9° on both sides)
 
 const FRONTAL_MAG_THRESHOLD = 8;
 const DIR_MAG_MIN   = 15;
@@ -26,26 +26,26 @@ const DIR_MAG_MAX   = 42;
 const DIR_ANGLE_TOL = 22.5;
 
 const TARGETS = [
-  { label: 'Nhìn thẳng vào camera',    frontal: true, theta: null },
-  { label: 'Phải',           yaw:  24, pitch:   0, theta:   0 },
-  { label: 'Chéo trên-phải', yaw:  18, pitch:  14, theta:  45 },
-  { label: 'Trên',           yaw:   0, pitch:  18, theta:  90 },
-  { label: 'Chéo trên-trái', yaw: -18, pitch:  14, theta: 135 },
-  { label: 'Trái',           yaw: -24, pitch:   0, theta: 180 },
-  { label: 'Chéo dưới-trái', yaw: -18, pitch: -12, theta: 225 },
-  { label: 'Dưới',           yaw:   0, pitch: -14, theta: 270 },
-  { label: 'Chéo dưới-phải', yaw:  18, pitch: -12, theta: 315 },
+  { label: 'Look straight at the camera',    frontal: true, theta: null },
+  { label: 'Right',           yaw:  24, pitch:   0, theta:   0 },
+  { label: 'Top-Right', yaw:  18, pitch:  14, theta:  45 },
+  { label: 'Top',           yaw:   0, pitch:  18, theta:  90 },
+  { label: 'Top-Left', yaw: -18, pitch:  14, theta: 135 },
+  { label: 'Left',           yaw: -24, pitch:   0, theta: 180 },
+  { label: 'Bottom-Left', yaw: -18, pitch: -12, theta: 225 },
+  { label: 'Bottom',           yaw:   0, pitch: -14, theta: 270 },
+  { label: 'Bottom-Right', yaw:  18, pitch: -12, theta: 315 },
 ];
 
 const DIR_THETAS = [0, 45, 90, 135, 180, 225, 270, 315];
 
-// Điểm trên ellipse tại góc theta (độ). Dùng chung cho <ellipse>, arc, marker.
+// Point on ellipse at angle theta (degrees). Used for <ellipse>, arc, marker.
 function ellipsePoint(thetaDeg) {
   const rad = thetaDeg * Math.PI / 180;
   return { x: 50 + RX * Math.cos(rad), y: 50 - RY * Math.sin(rad) };
 }
 
-// Chênh lệch góc có dấu, chuẩn hóa [-180, 180]
+// Signed angle difference, normalized to [-180, 180]
 function angleDiff(a, b) {
   let d = ((a - b) % 360 + 360) % 360;
   if (d > 180) d -= 360;
@@ -135,7 +135,7 @@ export default function MultiAngleCapture({ onCapturesComplete, onReset, disable
         }
       })
       .catch(() => setCameraError(
-        'Bạn cần cấp quyền camera. Vào setting browser cho phép camera, rồi reload trang.'
+        'Camera access is required. Please allow camera permissions in your browser settings and reload the page.'
       ));
     return () => { if (active) active.getTracks().forEach((t) => t.stop()); };
   }, []);
@@ -166,7 +166,7 @@ export default function MultiAngleCapture({ onCapturesComplete, onReset, disable
       } catch {
         if (!cancelled) {
           setModelLoading(false);
-          setModelError('Không tải được MediaPipe. Kiểm tra kết nối mạng rồi reload.');
+          setModelError('Failed to load MediaPipe. Please check your network connection and reload.');
         }
       }
     })();
@@ -224,7 +224,7 @@ export default function MultiAngleCapture({ onCapturesComplete, onReset, disable
                   const avgEAR = (calcEAR(lms, RIGHT_EYE_IDX) + calcEAR(lms, LEFT_EYE_IDX)) / 2;
                   if (avgEAR < EAR_THRESHOLD) {
                     if (eyesClosedStartRef.current === null) eyesClosedStartRef.current = now;
-                    else if (now - eyesClosedStartRef.current >= EAR_CLOSED_MS) fStatus = 'eyes_closed';
+                  else if (now - eyesClosedStartRef.current >= EAR_CLOSED_MS) fStatus = 'eyes_closed';
                   } else {
                     eyesClosedStartRef.current = null;
                   }
@@ -292,8 +292,8 @@ export default function MultiAngleCapture({ onCapturesComplete, onReset, disable
                 }
               }
             } else {
-              // CASE A: không có landmarks → mặt thật sự không thấy
-              // CASE B: có landmarks nhưng thiếu pose matrix → nghiêng quá
+              // CASE A: no landmarks → face is truly not visible
+              // CASE B: has landmarks but missing pose matrix → tilted too much
               if (res.faceLandmarks?.length > 0) {
                 latestLandmarksRef.current = res.faceLandmarks[0];
                 const lms = res.faceLandmarks[0];
@@ -423,13 +423,13 @@ export default function MultiAngleCapture({ onCapturesComplete, onReset, disable
           style={{ width: '100%', display: 'block', borderRadius: '8px', transform: 'scaleX(-1)', background: '#000' }}
         />
 
-        {/* ── SINGLE SVG: ellipse viền + 8 cung + chấm tâm + marker ── */}
+        {/* ── SINGLE SVG: ellipse border + 8 arcs + center dot + marker ── */}
         <svg
           viewBox="0 0 100 100"
           preserveAspectRatio="none"
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}
         >
-          {/* Viền ellipse (1 hình duy nhất) */}
+          {/* Ellipse border (single shape) */}
           <ellipse cx="50" cy="50" rx={RX} ry={RY}
             fill="none"
             stroke={ovalStroke}
@@ -437,13 +437,13 @@ export default function MultiAngleCapture({ onCapturesComplete, onReset, disable
             style={{ transition: 'stroke 0.25s' }}
           />
 
-          {/* 8 cung arc trên viền ellipse — cùng RX/RY → tuyệt đối trùng khít */}
+          {/* 8 arcs on ellipse border — same RX/RY → perfectly aligned */}
           {DIR_THETAS.map((theta, i) => {
             const done   = capturedDirs.has(i);
             const active = activeDir === i;
             const p1 = ellipsePoint(theta - HALF_SPAN);
             const p2 = ellipsePoint(theta + HALF_SPAN);
-            // sweep-flag=0 (CCW trên màn hình) → arc ngắn theo hướng tăng theta
+            // sweep-flag=0 (CCW on screen) → short arc in direction of increasing theta
             return (
               <path key={i}
                 d={`M ${p1.x.toFixed(3)} ${p1.y.toFixed(3)} A ${RX} ${RY} 0 0 0 ${p2.x.toFixed(3)} ${p2.y.toFixed(3)}`}
@@ -456,7 +456,7 @@ export default function MultiAngleCapture({ onCapturesComplete, onReset, disable
             );
           })}
 
-          {/* Chấm tâm — frontal */}
+          {/* Center dot — frontal */}
           {!allDone && (
             <circle cx="50" cy="50" r="2.5"
               fill={frontalDone ? '#51cf66' : 'rgba(255,255,255,0.4)'}
@@ -468,7 +468,7 @@ export default function MultiAngleCapture({ onCapturesComplete, onReset, disable
             />
           )}
 
-          {/* Marker vị trí đầu hiện tại — chạy trên viền ellipse */}
+          {/* Current head position marker — moves on ellipse border */}
           {started && currentMag > 10 && (() => {
             const p = ellipsePoint(currentTheta);
             return (
@@ -502,13 +502,13 @@ export default function MultiAngleCapture({ onCapturesComplete, onReset, disable
               borderRadius: '8px', padding: '20px 24px', textAlign: 'center',
             }}>
               <div style={{ fontSize: '16px', fontWeight: 700, color: '#004085', marginBottom: '8px' }}>
-                Sẵn sàng chụp 9 góc khuôn mặt?
+                Ready to capture 9 face angles?
               </div>
               <div style={{ fontSize: '13px', color: '#ffffff', marginBottom: '16px', lineHeight: 1.6,
                 background: 'rgba(0,0,0,0.55)', padding: '8px 14px', borderRadius: '8px',
                 textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
-                Nhìn thẳng trước, rồi từ từ xoay đầu theo các hướng.<br />
-                Hệ thống tự động chụp khi phát hiện đúng góc.
+                Look straight ahead, then slowly rotate your head in all directions.<br />
+                The system will automatically capture when the correct angle is detected.
               </div>
               <button
                 onClick={() => { setStarted(true); startedRef.current = true; }}
@@ -521,11 +521,11 @@ export default function MultiAngleCapture({ onCapturesComplete, onReset, disable
                   cursor: (!cameraReady || modelLoading || modelError) ? 'not-allowed' : 'pointer',
                 }}
               >
-                ▶ Bắt Đầu Chụp
+                ▶ Start Capture
               </button>
               {(modelLoading || !cameraReady) && (
                 <div style={{ marginTop: '10px', fontSize: '12px', color: '#888' }}>
-                  🔄 {modelLoading ? 'Đang tải MediaPipe...' : 'Đang khởi động camera...'}
+                  🔄 {modelLoading ? 'Loading MediaPipe...' : 'Starting camera...'}
                 </div>
               )}
               {modelError && (
@@ -534,17 +534,17 @@ export default function MultiAngleCapture({ onCapturesComplete, onReset, disable
             </div>
           ) : (
             <>
-              {/* Text hướng dẫn */}
+              {/* Instruction text */}
               <div style={{
                 alignSelf: 'center', fontSize: '14px', color: '#ffffff',
                 background: 'rgba(0,0,0,0.6)', padding: '6px 14px',
                 borderRadius: '999px', textShadow: '0 1px 2px rgba(0,0,0,0.5)',
               }}>
                 {!frontalDone
-                  ? 'Nhìn thẳng vào camera'
+                  ? 'Look straight at the camera'
                   : capturedDirs.size < 8
-                    ? `Từ từ xoay đầu theo vòng tròn để quét đủ các góc (${capturedDirs.size + 1}/8)`
-                    : 'Hoàn tất! Sẵn sàng lưu'}
+                    ? `Slowly rotate your head in a circle to scan all angles (${capturedDirs.size + 1}/8)`
+                    : 'Completed! Ready to save'}
               </div>
 
               {/* Face status hint */}
@@ -555,13 +555,13 @@ export default function MultiAngleCapture({ onCapturesComplete, onReset, disable
                   background: 'rgba(0,0,0,0.6)', padding: '6px 14px',
                   borderRadius: '999px', textShadow: '0 1px 2px rgba(0,0,0,0.5)',
                 }}>
-                  {faceStatus === 'small'        ? 'Lại gần hơn'
-                  : faceStatus === 'large'       ? 'Lùi ra xa hơn'
-                  : faceStatus === 'angle_lost'  ? 'Mặt đang nghiêng quá — quay đầu nhẹ lại'
-                  : faceStatus === 'lost'        ? 'Không thấy mặt — vui lòng nhìn thẳng vào camera'
-                  : faceStatus === 'occluded'    ? 'Vui lòng bỏ tay khỏi mặt'
-                  : faceStatus === 'eyes_closed' ? 'Vui lòng mở mắt nhìn vào camera'
-                  : 'Đưa mặt vào khung'}
+                  {faceStatus === 'small'        ? 'Move closer'
+                  : faceStatus === 'large'       ? 'Move further away'
+                  : faceStatus === 'angle_lost'  ? 'Face is tilted too much — turn your head slightly back'
+                  : faceStatus === 'lost'        ? 'Face not detected — please look straight at the camera'
+                  : faceStatus === 'occluded'    ? 'Please remove hands from your face'
+                  : faceStatus === 'eyes_closed' ? 'Please open your eyes and look at the camera'
+                  : 'Position your face in the frame'}
                 </div>
               )}
 
@@ -572,7 +572,7 @@ export default function MultiAngleCapture({ onCapturesComplete, onReset, disable
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             {capturedImages.map((blob, i) => blob && (
-              <img key={i} src={URL.createObjectURL(blob)} alt={`Góc ${i + 1}`}
+              <img key={i} src={URL.createObjectURL(blob)} alt={`Angle ${i + 1}`}
                 style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: '4px', border: '2px solid #28a745' }} />
             ))}
           </div>
@@ -587,7 +587,7 @@ export default function MultiAngleCapture({ onCapturesComplete, onReset, disable
                 color: 'white', cursor: disabled ? 'not-allowed' : 'pointer',
               }}
             >
-              ✅ Sẵn Sàng Lưu
+              ✅ Ready to Save
             </button>
             <button
               onClick={handleReset}
@@ -598,7 +598,7 @@ export default function MultiAngleCapture({ onCapturesComplete, onReset, disable
                 color: 'white', cursor: disabled ? 'not-allowed' : 'pointer',
               }}
             >
-              ↺ Bắt Đầu Lại
+              ↺ Restart
             </button>
           </div>
         </div>
