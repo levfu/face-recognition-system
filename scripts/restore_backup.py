@@ -118,7 +118,7 @@ def main() -> int:
     if not args.yes:
         confirm = input(f"Restore from {backup_dir}? Enter 'yes' to proceed:")
         if confirm.strip().lower() != "yes":
-            print("Đã hủy.")
+            print("Cancelled.")
             return 0
 
     targets = args.only or ["postgres", "qdrant", "minio"]
