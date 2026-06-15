@@ -1,5 +1,5 @@
 # backend/app/services/gdrive_uploader.py
-"""Upload bản backup (tar.gz) lên Google Drive."""
+"""Upload backup archive (tar.gz) to Google Drive."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from app.config import settings
 
 ARCHIVE_PREFIX = "facerecog_backup_"
 SCOPES_SA = ["https://www.googleapis.com/auth/drive.file"]
-# OAuth: upload vào folder Drive của chính tài khoản Gmail (có quota)
+# OAuth: upload to the Drive folder of the Gmail account itself (has quota)
 SCOPES_OAUTH = ["https://www.googleapis.com/auth/drive.file"]
 
 
@@ -20,10 +20,10 @@ def _friendly_gdrive_error(exc: Exception) -> str:
     msg = str(exc)
     if "storageQuotaExceeded" in msg or "do not have storage quota" in msg:
         return (
-            "Service Account không có dung lượng Google Drive (quota = 0). "
-            "Gmail cá nhân: đặt GOOGLE_DRIVE_AUTH_MODE=oauth và chạy "
-            "scripts/gdrive_oauth_setup.py. Workspace: dùng Shared Drive. "
-            "Chi tiết: docs/BACKUP_GOOGLE_DRIVE.md"
+            "Service Account has no Google Drive storage quota. "
+            "For personal Gmail: set GOOGLE_DRIVE_AUTH_MODE=oauth and run "
+            "scripts/gdrive_oauth_setup.py. For Workspace: use a Shared Drive. "
+            "See details: docs/BACKUP_GOOGLE_DRIVE.md"
         )
     return msg
 
@@ -32,7 +32,7 @@ def _resolve_credentials_path(path: str) -> Path:
     p = Path(path)
     if p.is_file():
         return p
-    # Trong Docker: /secrets/... ; .env hay ghi ./secrets/...
+    # In Docker: /secrets/... ; .env might use ./secrets/...
     fallback = Path("/secrets") / p.name
     if fallback.is_file():
         return fallback
@@ -46,8 +46,8 @@ def _drive_service_sa():
     cred_path = _resolve_credentials_path(settings.gdrive_credentials_path)
     if not cred_path.is_file():
         raise FileNotFoundError(
-            f"Không tìm thấy Service Account JSON: {cred_path}. "
-            "Trong Docker dùng GOOGLE_DRIVE_CREDENTIALS=/secrets/gdrive-service-account.json"
+            f"Service Account JSON not found: {cred_path}. "
+            "In Docker, use GOOGLE_DRIVE_CREDENTIALS=/secrets/gdrive-service-account.json"
         )
 
     creds = service_account.Credentials.from_service_account_file(
@@ -65,8 +65,8 @@ def _drive_service_oauth():
     token_path = _resolve_credentials_path(settings.gdrive_oauth_token_path)
     if not token_path.is_file():
         raise FileNotFoundError(
-            f"Không tìm thấy OAuth token: {token_path}. "
-            "Chạy: python scripts/gdrive_oauth_setup.py"
+            f"OAuth token not found: {token_path}. "
+            "Run: python scripts/gdrive_oauth_setup.py"
         )
 
     creds = Credentials.from_authorized_user_file(str(token_path), SCOPES_OAUTH)
@@ -76,7 +76,7 @@ def _drive_service_oauth():
 
     if not creds.valid:
         raise RuntimeError(
-            "OAuth token hết hạn. Chạy lại: python scripts/gdrive_oauth_setup.py"
+            "OAuth token expired. Run again: python scripts/gdrive_oauth_setup.py"
         )
 
     return build("drive", "v3", credentials=creds, cache_discovery=False)
@@ -102,7 +102,7 @@ def upload_backup_archive(archive_path: Path) -> dict:
     from googleapiclient.http import MediaFileUpload
 
     if not settings.gdrive_folder_id:
-        raise ValueError("GOOGLE_DRIVE_FOLDER_ID chưa được cấu hình")
+        raise ValueError("GOOGLE_DRIVE_FOLDER_ID is not configured")
 
     service = _drive_service()
     media = MediaFileUpload(
