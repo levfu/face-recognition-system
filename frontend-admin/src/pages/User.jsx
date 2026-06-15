@@ -34,7 +34,7 @@ function StatusBadge({ status }) {
   if (status === 'on_time') {
     return (
       <span style={{ ...BADGE.base, background: 'rgba(16,185,129,0.13)', color: '#059669' }}>
-        Đúng giờ
+        On Time
       </span>
     );
   }
@@ -42,21 +42,21 @@ function StatusBadge({ status }) {
     const minutes = status.split(':')[1];
     return (
       <span style={{ ...BADGE.base, background: 'rgba(245,158,11,0.13)', color: '#b45309' }}>
-        Muộn {minutes}p
+        Late {minutes}p
       </span>
     );
   }
   if (status === 'absent') {
     return (
       <span style={{ ...BADGE.base, background: 'rgba(239,68,68,0.13)', color: '#dc2626' }}>
-        Vắng
+        Absent
       </span>
     );
   }
   if (status === 'pending') {
     return (
       <span style={{ ...BADGE.base, background: 'rgba(100,116,139,0.13)', color: '#64748b' }}>
-        Chưa check-in
+        Not check in yet
       </span>
     );
   }
@@ -79,7 +79,7 @@ function WorkCell({ checkInTime, checkOutTime, workMinutes }) {
         color: '#2563eb',
         fontSize: 11,
       }}>
-        Đang làm việc
+        Still working
       </span>
     );
   }
@@ -103,7 +103,7 @@ const Users = () => {
       );
       setUsers(response.data);
     } catch {
-      showToast('Lỗi khi tải danh sách nhân viên', 'error');
+      showToast('Failed to load employee list.', 'error');
     } finally {
       setLoading(false);
     }
@@ -115,16 +115,16 @@ const Users = () => {
 
   const handleDelete = async (id, name) => {
     if (!window.confirm(
-      `Bạn chắc chắn muốn xóa "${name}" khỏi hệ thống?\n\nHành động này sẽ xóa toàn bộ dữ liệu nhận diện của nhân viên này.`
+      `Are you sure you want to delete "${name}"?\n\nThis will permanently remove all recognition data associated with this employee.`
     )) return;
 
     setDeleting(id);
     try {
       await api.delete(`/api/admin/employees/${id}`, { headers: authHeaders() });
-      showToast(`Xóa "${name}" thành công!`, 'success');
+      showToast(`Xóa "${name}" success!`, 'success');
       fetchUsers(targetDate);
     } catch (error) {
-      const msg = error.response?.data?.detail || 'Lỗi khi xóa';
+      const msg = error.response?.data?.detail || 'Error while deleting';
       showToast(msg, 'error');
     } finally {
       setDeleting(null);
@@ -134,13 +134,13 @@ const Users = () => {
   if (loading) {
     return (
       <div className="page">
-        <PageHeader icon={UsersIcon} title="Quản Lý Nhân Sự" />
+        <PageHeader icon={UsersIcon} title="Employee Management" />
         <div style={{
           display: 'flex', alignItems: 'center', gap: 10,
           color: 'var(--text-dim)', padding: '40px 16px', justifyContent: 'center',
         }}>
           <span className="spinner"></span>
-          <span>Đang tải danh sách nhân viên...</span>
+          <span>Loading employee list...</span>
         </div>
       </div>
     );
@@ -155,8 +155,8 @@ const Users = () => {
     <div className="page">
       <PageHeader
         icon={UsersIcon}
-        title="Quản Lý Nhân Sự"
-        subtitle={`${users.length} nhân viên`}
+        title="Employee Management"
+        subtitle={`${users.length} employees`}
       />
 
       {/* Toolbar: date picker + summary chips */}
@@ -165,7 +165,7 @@ const Users = () => {
         marginBottom: 18, flexWrap: 'wrap',
       }}>
         <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-dim)', whiteSpace: 'nowrap' }}>
-          Xem ngày:
+          Select date:
         </label>
         <input
           type="date"
@@ -180,14 +180,14 @@ const Users = () => {
         <table className="table">
           <thead>
             <tr>
-              <th style={{ width: 44, textAlign: 'center' }}>STT</th>
-              <th style={{ minWidth: 90 }}>Mã NV</th>
-              <th style={{ minWidth: 160 }}>Họ Tên</th>
+              <th style={{ width: 44, textAlign: 'center' }}>No.</th>
+              <th style={{ minWidth: 90 }}>Employee ID</th>
+              <th style={{ minWidth: 160 }}>Employee Name</th>
               <th style={{ minWidth: 80 }} className="center">Check-in</th>
               <th style={{ minWidth: 80 }} className="center">Check-out</th>
-              <th style={{ minWidth: 120 }} className="center">Giờ Làm</th>
-              <th style={{ minWidth: 140 }}>Trạng Thái</th>
-              <th className="center" style={{ minWidth: 90 }}>Thao Tác</th>
+              <th style={{ minWidth: 120 }} className="center">Working Hours</th>
+              <th style={{ minWidth: 140 }}>Status</th>
+              <th className="center" style={{ minWidth: 90 }}>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -196,9 +196,9 @@ const Users = () => {
                 <td colSpan="8" style={{ padding: '40px 16px' }}>
                   <div className="empty-state">
                     <div className="empty-state-icon">👤</div>
-                    <div className="empty-state-title">Chưa có nhân viên nào</div>
+                    <div className="empty-state-title">No employees yet.</div>
                     <div className="empty-state-text">
-                      Bắt đầu bằng cách đăng ký nhân viên mới ở trang Đăng Ký Mới
+                      Get started by registering a new employee on the Registration page.
                     </div>
                   </div>
                 </td>
