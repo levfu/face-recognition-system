@@ -5,30 +5,30 @@ import PageHeader from '../ui/PageHeader';
 
 // Keep action map in one place for easy extension
 export const ACTION_LABELS = {
-  create_admin: 'Tạo tài khoản quản lý',
-  delete_admin: 'Xóa tài khoản',
-  reset_password: 'Reset mật khẩu',
-  change_password: 'Đổi mật khẩu cá nhân',
-  update_settings: 'Cập nhật cài đặt',
+  create_admin: 'Create admin account',
+  delete_admin: 'Delete account',
+  reset_password: 'Reset password',
+  change_password: 'Change personal password',
+  update_settings: 'Update settings',
 };
 
 function formatTarget(item) {
   if (item.target_type === 'admin') {
     return item.details?.username ?? item.target_id ?? '—';
   }
-  if (item.action === 'change_password') return '(chính mình)';
-  if (item.action === 'update_settings') return 'Hệ thống';
+  if (item.action === 'change_password') return '(self)';
+  if (item.action === 'update_settings') return 'System';
   return '—';
 }
 
 const FIELD_LABELS_VN = {
-  ai_threshold: 'Ngưỡng nhận diện',
-  liveness_enabled: 'Kiểm tra sống động',
+  ai_threshold: 'AI Threshold',
+  liveness_enabled: 'Liveness Check',
 };
 
 const fmtFieldValue = (field, val) => {
   if (field === 'ai_threshold') return `${Math.round(Number(val) * 100)}%`;
-  if (field === 'liveness_enabled') return val ? 'Bật' : 'Tắt';
+  if (field === 'liveness_enabled') return val ? 'Enabled' : 'Disabled';
   return String(val);
 };
 
@@ -36,13 +36,13 @@ function formatDetails(item) {
   const d = item.details;
   switch (item.action) {
     case 'create_admin':
-      return `Tài khoản: ${d?.username ?? '—'}`;
+      return `Account: ${d?.username ?? '—'}`;
     case 'delete_admin':
-      return `Tài khoản: ${d?.username ?? '—'}`;
+      return `Account: ${d?.username ?? '—'}`;
     case 'reset_password':
-      return `Reset mật khẩu cho: ${d?.username ?? '—'}`;
+      return `Reset password for: ${d?.username ?? '—'}`;
     case 'change_password':
-      return `Tự đổi mật khẩu của: ${item.actor_username ?? '—'}`;
+      return `Changed own password: ${item.actor_username ?? '—'}`;
     case 'update_settings': {
       if (!d?.changes) return '—';
       return Object.entries(d.changes)
@@ -82,7 +82,7 @@ const ActivityLogs = () => {
       setData(res.data);
       setOffset(off);
     } catch (err) {
-      console.error('Lỗi tải nhật ký', err);
+      console.error('Error loading logs', err);
     } finally {
       setLoading(false);
     }
@@ -111,64 +111,64 @@ const ActivityLogs = () => {
     <div className="page">
       <PageHeader
         icon={ScrollText}
-        title="Nhật Ký Hoạt Động"
-        subtitle={`${data.total} hoạt động được ghi nhận`}
+        title="Activity Logs"
+        subtitle={`${data.total} activities recorded`}
       />
 
       {/* Filters */}
       <div className="card" style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-end', marginBottom: 16 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <label style={LABEL_STYLE}>Loại hành động</label>
+          <label style={LABEL_STYLE}>Action Type</label>
           <select
             className="input"
             value={actionFilter}
             onChange={e => setActionFilter(e.target.value)}
             style={{ minWidth: 200 }}
           >
-            <option value="">Tất cả</option>
+            <option value="">All</option>
             {Object.entries(ACTION_LABELS).map(([val, label]) => (
               <option key={val} value={val}>{label}</option>
             ))}
           </select>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <label style={LABEL_STYLE}>Từ ngày</label>
+          <label style={LABEL_STYLE}>From date</label>
           <input className="input" type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <label style={LABEL_STYLE}>Đến ngày</label>
+          <label style={LABEL_STYLE}>To date</label>
           <input className="input" type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} />
         </div>
-        <button className="btn btn-primary" onClick={handleFilter}>Lọc</button>
-        <button className="btn btn-secondary" onClick={handleReset}>Đặt lại</button>
+        <button className="btn btn-primary" onClick={handleFilter}>Filter</button>
+        <button className="btn btn-secondary" onClick={handleReset}>Reset</button>
       </div>
 
       {loading ? (
-        <p style={{ color: 'var(--text-dim)' }}>Đang tải nhật ký...</p>
+        <p style={{ color: 'var(--text-dim)' }}>Loading logs...</p>
       ) : (
         <>
           <div className="table-wrap">
             <table className="table">
               <thead>
                 <tr>
-                  <th style={{ minWidth: 160 }}>Thời gian</th>
-                  <th style={{ minWidth: 140 }}>Người thao tác</th>
-                  <th style={{ minWidth: 200 }}>Hành động</th>
-                  <th style={{ minWidth: 140 }}>Đối tượng</th>
-                  <th>Chi tiết</th>
+                  <th style={{ minWidth: 160 }}>Time</th>
+                  <th style={{ minWidth: 140 }}>Actor</th>
+                  <th style={{ minWidth: 200 }}>Action</th>
+                  <th style={{ minWidth: 140 }}>Target</th>
+                  <th>Details</th>
                 </tr>
               </thead>
               <tbody>
                 {data.items.length === 0 ? (
                   <tr>
                     <td colSpan="5" className="center" style={{ padding: '32px', color: 'var(--text-dim)' }}>
-                      Chưa có hoạt động nào
+                      No activities found
                     </td>
                   </tr>
                 ) : data.items.map(item => (
                   <tr key={item.id}>
-                    <td className="dim">{new Date(item.created_at).toLocaleString('vi-VN')}</td>
-                    <td style={{ fontWeight: 600 }}>{item.actor_username ?? <span style={{ color: 'var(--text-dim)', fontStyle: 'italic' }}>Đã xóa</span>}</td>
+                    <td className="dim">{new Date(item.created_at).toLocaleString('en-US')}</td>
+                    <td style={{ fontWeight: 600 }}>{item.actor_username ?? <span style={{ color: 'var(--text-dim)', fontStyle: 'italic' }}>Deleted</span>}</td>
                     <td>{ACTION_LABELS[item.action] ?? item.action}</td>
                     <td>{formatTarget(item)}</td>
                     <td style={{ fontSize: 13, color: 'var(--text-dim)' }}>{formatDetails(item)}</td>
@@ -184,15 +184,15 @@ const ActivityLogs = () => {
                 className="btn btn-secondary"
                 disabled={currentPage <= 1}
                 onClick={() => fetchLogs(offset - PAGE)}
-              >← Trước</button>
+              >← Prev</button>
               <span style={{ fontSize: 13, color: 'var(--text-dim)' }}>
-                Trang {currentPage} / {totalPages}
+                Page {currentPage} of {totalPages}
               </span>
               <button
                 className="btn btn-secondary"
                 disabled={currentPage >= totalPages}
                 onClick={() => fetchLogs(offset + PAGE)}
-              >Tiếp →</button>
+              >Next →</button>
             </div>
           )}
         </>

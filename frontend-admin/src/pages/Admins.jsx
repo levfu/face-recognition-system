@@ -52,7 +52,7 @@ const Admins = () => {
       const res = await api.get('/api/admin/admins', { headers: authHeaders() });
       setAdmins(res.data);
     } catch {
-      showToast('Không tải được danh sách admin', 'error');
+      showToast('Failed to load admin list.', 'error');
     } finally {
       setLoading(false);
     }
@@ -74,22 +74,22 @@ const Admins = () => {
   const handleCreate = async (e) => {
     e.preventDefault();
     if (!username.trim() || username.trim().length < 3) {
-      showToast('Tên đăng nhập tối thiểu 3 ký tự', 'warning'); return;
+      showToast('Username must be at least 3 characters long', 'warning'); return;
     }
     if (!password || password.length < 6) {
-      showToast('Mật khẩu tối thiểu 6 ký tự', 'warning'); return;
+      showToast('Password must be at least 6 characters long', 'warning'); return;
     }
     if (confirmPassword !== password) {
-      showToast('Mật khẩu xác nhận không khớp', 'warning'); return;
+      showToast('Passwords do not match', 'warning'); return;
     }
     setSubmitting(true);
     try {
       await api.post('/api/admin/admins', { username: username.trim(), password }, { headers: authHeaders() });
       setUsername(''); setPassword(''); setConfirmPassword('');
-      showToast('Tạo tài khoản thành công!', 'success');
+      showToast('Account created successfully!', 'success');
       fetchAdmins();
     } catch (err) {
-      showToast(err.response?.data?.detail || 'Lỗi khi tạo tài khoản', 'error');
+      showToast(err.response?.data?.detail || 'Failed to create account', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -110,10 +110,10 @@ const Admins = () => {
   const handleResetPassword = async (e) => {
     e.preventDefault();
     if (!resetNewPw || resetNewPw.length < 6) {
-      showToast('Mật khẩu mới tối thiểu 6 ký tự', 'warning'); return;
+      showToast('New password must be at least 6 characters long', 'warning'); return;
     }
     if (resetNewPw !== resetConfirmPw) {
-      showToast('Mật khẩu xác nhận không khớp', 'warning'); return;
+      showToast('Passwords do not match', 'warning'); return;
     }
     setResetting(true);
     try {
@@ -122,26 +122,26 @@ const Admins = () => {
         { new_password: resetNewPw },
         { headers: authHeaders() }
       );
-      showToast(`Đã reset mật khẩu cho ${resetTarget.username}`, 'success');
+      showToast(`Password reset for ${resetTarget.username}`, 'success');
       closeResetModal();
     } catch (err) {
-      showToast(err.response?.data?.detail || 'Lỗi khi reset mật khẩu', 'error');
+      showToast(err.response?.data?.detail || 'Failed to reset password', 'error');
     } finally {
       setResetting(false);
     }
   };
 
   const handleDelete = async (id, name, isSelf, targetRole) => {
-    if (isSelf) { showToast('Không thể xóa tài khoản đang đăng nhập', 'warning'); return; }
-    if (targetRole === 'super_admin') { showToast('Không thể xóa tài khoản Super Admin', 'warning'); return; }
-    if (!window.confirm(`Bạn chắc chắn muốn xóa tài khoản "${name}"?`)) return;
+    if (isSelf) { showToast('Cannot delete the currently logged-in account', 'warning'); return; }
+    if (targetRole === 'super_admin') { showToast('Cannot delete the Super Admin account.', 'warning'); return; }
+    if (!window.confirm(`Are you sure you want to delete the account "${name}"?`)) return;
     setDeleting(id);
     try {
       await api.delete(`/api/admin/admins/${id}`, { headers: authHeaders() });
-      showToast('Xóa tài khoản thành công!', 'success');
+      showToast('Deleted account!', 'success');
       fetchAdmins();
     } catch (err) {
-      showToast(err.response?.data?.detail || 'Lỗi khi xóa tài khoản', 'error');
+      showToast(err.response?.data?.detail || 'Failed to delete account', 'error');
     } finally {
       setDeleting(null);
     }
@@ -149,9 +149,9 @@ const Admins = () => {
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
-    if (!oldPw) { showToast('Vui lòng nhập mật khẩu hiện tại', 'warning'); return; }
-    if (newPw.length < 6) { showToast('Mật khẩu mới tối thiểu 6 ký tự', 'warning'); return; }
-    if (newPw !== confirmPw) { showToast('Mật khẩu xác nhận không khớp', 'warning'); return; }
+    if (!oldPw) { showToast('Please enter your current password', 'warning'); return; }
+    if (newPw.length < 6) { showToast('New password must be at least 6 characters long', 'warning'); return; }
+    if (newPw !== confirmPw) { showToast('Passwords do not match', 'warning'); return; }
     setChangingPw(true);
     try {
       await api.post(
@@ -160,9 +160,9 @@ const Admins = () => {
         { headers: authHeaders() }
       );
       setOldPw(''); setNewPw(''); setConfirmPw('');
-      showToast('Đổi mật khẩu thành công!', 'success');
+      showToast('Password changed successfully!', 'success');
     } catch (err) {
-      showToast(err.response?.data?.detail || 'Lỗi khi đổi mật khẩu', 'error');
+      showToast(err.response?.data?.detail || 'Error changing password', 'error');
     } finally {
       setChangingPw(false);
     }
@@ -173,7 +173,7 @@ const Admins = () => {
       <div className="page">
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--text-dim)' }}>
           <span className="spinner"></span>
-          <span>Đang tải danh sách admin...</span>
+          <span>Loading admin list...</span>
         </div>
       </div>
     );
@@ -183,32 +183,32 @@ const Admins = () => {
     <div className="card">
       <h3 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
         <KeyRound size={20} strokeWidth={1.5} color="var(--accent)" />
-        Đổi Mật Khẩu
+        Change Password
       </h3>
       <form onSubmit={handleChangePassword} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <Input
-          label="Mật khẩu hiện tại" type="password"
+          label="Current Password" type="password"
           value={oldPw} onChange={e => setOldPw(e.target.value)}
           disabled={changingPw} autoComplete="current-password"
-          placeholder="Nhập mật khẩu hiện tại"
+          placeholder="Enter current password"
         />
         <Input
-          label="Mật khẩu mới" type="password"
+          label="New Password" type="password"
           value={newPw} onChange={e => setNewPw(e.target.value)}
           disabled={changingPw} autoComplete="new-password"
-          placeholder="Tối thiểu 6 ký tự"
+          placeholder="At least 6 characters"
         />
         <Input
-          label="Xác nhận mật khẩu mới" type="password"
+          label="Confirm New Password" type="password"
           value={confirmPw} onChange={e => setConfirmPw(e.target.value)}
           disabled={changingPw} autoComplete="new-password"
-          placeholder="Nhập lại mật khẩu mới"
+          placeholder="Re-enter new password"
         />
         <Button type="submit" variant="primary" disabled={changingPw}
           style={{ padding: '12px 20px', display: 'flex', justifyContent: 'center', gap: 8 }}>
           {changingPw
-            ? <><span className="spinner"></span>Đang đổi...</>
-            : <><KeyRound size={16} strokeWidth={1.5} />Đổi Mật Khẩu</>}
+            ? <><span className="spinner"></span>Changing...</>
+            : <><KeyRound size={16} strokeWidth={1.5} />Change Password</>}
         </Button>
       </form>
     </div>
@@ -216,8 +216,8 @@ const Admins = () => {
 
   return (
     <div className="page">
-      <PageHeader icon={Lock} title="Quản Lý Tài Khoản Admin"
-        subtitle={isSuperAdmin ? `${admins.length} tài khoản` : undefined} />
+      <PageHeader icon={Lock} title="Admin Account Management"
+        subtitle={isSuperAdmin ? `${admins.length} accounts` : undefined} />
 
       {isSuperAdmin ? (
         <>
@@ -226,32 +226,32 @@ const Admins = () => {
             <div className="card">
               <h3 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <UserPlus size={20} strokeWidth={1.5} color="var(--accent)" />
-                Tạo Tài Khoản Quản Lý
+                Create Admin Account
               </h3>
               <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <Input
-                  label="Tên Đăng Nhập" type="text"
+                  label="Username" type="text"
                   value={username} onChange={e => setUsername(e.target.value)}
                   disabled={submitting} autoComplete="off"
-                  placeholder="Nhập tên đăng nhập (3+ ký tự)"
+                  placeholder="Enter username (3+ characters)"
                 />
                 <Input
-                  label="Mật Khẩu" type="password"
+                  label="Password" type="password"
                   value={password} onChange={e => setPassword(e.target.value)}
                   disabled={submitting} autoComplete="new-password"
-                  placeholder="Nhập mật khẩu (6+ ký tự)"
+                  placeholder="Enter password (6+ characters)"
                 />
                 <Input
-                  label="Xác Nhận Mật Khẩu" type="password"
+                  label="Confirm Password" type="password"
                   value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
                   disabled={submitting} autoComplete="new-password"
-                  placeholder="Nhập lại mật khẩu"
+                  placeholder="Re-enter password"
                 />
                 <Button type="submit" variant="primary" disabled={submitting}
                   style={{ padding: '12px 20px', display: 'flex', justifyContent: 'center', gap: 8 }}>
                   {submitting
-                    ? <><span className="spinner"></span>Đang tạo...</>
-                    : <><UserPlus size={16} strokeWidth={1.5} />Tạo Tài Khoản</>}
+                    ? <><span className="spinner"></span>Creating...</>
+                    : <><UserPlus size={16} strokeWidth={1.5} />Create Account</>}
                 </Button>
               </form>
             </div>
@@ -264,9 +264,9 @@ const Admins = () => {
             <table className="table">
               <thead>
                 <tr>
-                  <th style={{ minWidth: 200 }}>Tên Đăng Nhập</th>
-                  <th style={{ minWidth: 150 }}>Ngày Tạo</th>
-                  <th className="center" style={{ minWidth: 120 }}>Hành Động</th>
+                  <th style={{ minWidth: 200 }}>Username</th>
+                  <th style={{ minWidth: 150 }}>Created Date</th>
+                  <th className="center" style={{ minWidth: 120 }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -275,8 +275,8 @@ const Admins = () => {
                     <td colSpan="3" style={{ padding: '40px 16px', textAlign: 'center', color: 'var(--text-dim)' }}>
                       <div className="empty-state">
                         <div className="empty-state-icon">🔒</div>
-                        <div className="empty-state-title">Chưa có tài khoản admin</div>
-                        <div className="empty-state-text">Tạo tài khoản quản lý bằng form ở trên</div>
+                        <div className="empty-state-title">No admin accounts found</div>
+                        <div className="empty-state-text">Create an admin account using the form above</div>
                       </div>
                     </td>
                   </tr>
@@ -292,10 +292,10 @@ const Admins = () => {
                             marginLeft: 6, fontSize: 11, fontWeight: 700,
                             backgroundColor: 'var(--accent-light)', color: 'var(--accent)',
                             padding: '2px 8px', borderRadius: 4, display: 'inline-block',
-                          }}>(Bạn)</span>
+                          }}>(You)</span>
                         )}
                       </td>
-                      <td className="dim">{new Date(a.created_at).toLocaleDateString('vi-VN')}</td>
+                      <td className="dim">{new Date(a.created_at).toLocaleDateString('en-US')}</td>
                       <td className="center action-cell">
                         {canDelete ? (
                           <div style={{ display: 'inline-flex', gap: 6 }}>
@@ -314,8 +314,8 @@ const Admins = () => {
                               style={{ fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }}
                             >
                               {deleting === a.id
-                                ? <><span className="spinner" style={{ width: 14, height: 14 }}></span>Đang xóa</>
-                                : <><Icon name="Trash2" size={14} />Xóa</>}
+                                ? <><span className="spinner" style={{ width: 14, height: 14 }}></span>Deleting</>
+                                : <><Icon name="Trash2" size={14} />Delete</>}
                             </Button>
                           </div>
                         ) : (
@@ -336,7 +336,7 @@ const Admins = () => {
             background: 'var(--bg-card,#fff)', border: '1px solid var(--border)',
             borderRadius: 8, fontSize: 13, color: 'var(--text-dim)',
           }}>
-            Bạn đang đăng nhập với quyền: <strong style={{ color: 'var(--text)' }}>Admin</strong>
+            You are logged in as: <strong style={{ color: 'var(--text)' }}>Admin</strong>
           </div>
           <div style={{ maxWidth: 500 }}>
             {changePasswordCard}
@@ -357,7 +357,7 @@ const Admins = () => {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
               <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <KeyRound size={20} strokeWidth={1.5} color="var(--accent)" />
-                Reset mật khẩu cho {resetTarget.username}
+                Reset password for {resetTarget.username}
               </h3>
               <button
                 onClick={closeResetModal}
@@ -366,28 +366,28 @@ const Admins = () => {
             </div>
             <form onSubmit={handleResetPassword} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <Input
-                label="Mật khẩu mới" type="password"
+                label="New Password" type="password"
                 value={resetNewPw} onChange={e => setResetNewPw(e.target.value)}
                 disabled={resetting} autoComplete="new-password"
-                placeholder="Tối thiểu 6 ký tự"
+                placeholder="At least 6 characters"
               />
               <Input
-                label="Xác nhận mật khẩu mới" type="password"
+                label="Confirm New Password" type="password"
                 value={resetConfirmPw} onChange={e => setResetConfirmPw(e.target.value)}
                 disabled={resetting} autoComplete="new-password"
-                placeholder="Nhập lại mật khẩu mới"
+                placeholder="Re-enter new password"
               />
               <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
                 <Button type="submit" variant="primary" disabled={resetting}
                   style={{ flex: 1, padding: '11px 16px', display: 'flex', justifyContent: 'center', gap: 8 }}>
                   {resetting
-                    ? <><span className="spinner"></span>Đang reset...</>
+                    ? <><span className="spinner"></span>Resetting...</>
                     : <><KeyRound size={15} strokeWidth={1.5} />Reset</>}
                 </Button>
                 <Button type="button" variant="secondary" disabled={resetting}
                   onClick={closeResetModal}
                   style={{ flex: 1, padding: '11px 16px', display: 'flex', justifyContent: 'center' }}>
-                  Hủy
+                  Cancel
                 </Button>
               </div>
             </form>
