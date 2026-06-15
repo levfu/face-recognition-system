@@ -35,11 +35,11 @@ function ActionBadge({ action }) {
 function EmployeeStatusBadge({ isActive }) {
   return isActive === true ? (
     <span style={{ ...BADGE.base, background: 'rgba(16,185,129,0.12)', color: '#059669' }}>
-      Đang làm việc
+      Active
     </span>
   ) : (
     <span style={{ ...BADGE.base, background: 'var(--bg-dim,#f1f5f9)', color: 'var(--text-dim)' }}>
-      Đã nghỉ việc
+      Inactive
     </span>
   );
 }
@@ -54,7 +54,7 @@ const AccessLogs = () => {
   const [draftSearch, setDraftSearch]     = useState('');
   const [draftAction, setDraftAction]     = useState('all');
 
-  // Applied filters (only updated on "Lọc")
+  // Applied filters (only updated on "Filter")
   const [appliedFromDate, setAppliedFromDate] = useState('');
   const [appliedToDate, setAppliedToDate]     = useState('');
   const [appliedSearch, setAppliedSearch]     = useState('');
@@ -67,7 +67,7 @@ const AccessLogs = () => {
       });
       setLogs(response.data);
     } catch (error) {
-      console.error('Lỗi tải logs', error);
+      console.error('Error loading logs', error);
     } finally {
       setLoading(false);
     }
@@ -128,7 +128,7 @@ const AccessLogs = () => {
   if (loading) {
     return (
       <div className="page">
-        <p style={{ color: 'var(--text-dim)' }}>Đang tải lịch sử ra vào...</p>
+        <p style={{ color: 'var(--text-dim)' }}>Loading access logs...</p>
       </div>
     );
   }
@@ -137,29 +137,29 @@ const AccessLogs = () => {
     <div className="page">
       <PageHeader
         icon={Clock}
-        title="Lịch Sử Ra Vào"
-        subtitle={`${filteredLogs.length} / ${logs.length} bản ghi`}
+        title="Access Logs"
+        subtitle={`${filteredLogs.length} / ${logs.length} records`}
       />
 
       {/* ── Filter bar ── */}
       <div className="card" style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-end', marginBottom: 16 }}>
         {/* Date range */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Từ ngày</label>
+          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>From date</label>
           <input className="input" type="date" value={draftFromDate} onChange={(e) => setDraftFromDate(e.target.value)} />
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Đến ngày</label>
+          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>To date</label>
           <input className="input" type="date" value={draftToDate} onChange={(e) => setDraftToDate(e.target.value)} />
         </div>
 
         {/* Name/code search */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, minWidth: 180 }}>
-          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Tìm nhân viên</label>
+          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Search employee</label>
           <input
             className="input"
             type="text"
-            placeholder="Nhập tên hoặc mã nhân viên..."
+            placeholder="Enter name or employee code..."
             value={draftSearch}
             onChange={(e) => setDraftSearch(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') handleApplyFilter(); }}
@@ -168,14 +168,14 @@ const AccessLogs = () => {
 
         {/* Action filter */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Loại hành động</label>
+          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Action Type</label>
           <select
             className="input"
             style={{ cursor: 'pointer' }}
             value={draftAction}
             onChange={(e) => setDraftAction(e.target.value)}
           >
-            <option value="all">Tất cả</option>
+            <option value="all">All</option>
             <option value="check_in">Check-in</option>
             <option value="check_out">Check-out</option>
           </select>
@@ -184,12 +184,12 @@ const AccessLogs = () => {
         {/* Buttons */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignSelf: 'flex-end' }}>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn btn-primary" onClick={handleApplyFilter}>Lọc</button>
-            <button className="btn btn-secondary" onClick={handleReset}>Đặt lại</button>
+            <button className="btn btn-primary" onClick={handleApplyFilter}>Filter</button>
+            <button className="btn btn-secondary" onClick={handleReset}>Reset</button>
           </div>
           {hasPendingChanges && (
             <span style={{ fontSize: 11, color: 'var(--text-dim)', textAlign: 'right' }}>
-              Có thay đổi chưa áp dụng
+              Unapplied changes
             </span>
           )}
         </div>
@@ -200,26 +200,26 @@ const AccessLogs = () => {
         <table className="table">
           <thead>
             <tr>
-              <th>Thời gian</th>
-              <th>Nhân Viên</th>
-              <th>Trạng thái NV</th>
-              <th>Nhận diện</th>
-              <th>Độ tin cậy</th>
-              <th>Hành động</th>
+              <th>Time</th>
+              <th>Employee</th>
+              <th>Emp. Status</th>
+              <th>Recognition</th>
+              <th>Confidence</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
             {filteredLogs.length === 0 ? (
               <tr>
                 <td colSpan="6" className="center" style={{ padding: '32px', color: 'var(--text-dim)' }}>
-                  {logs.length === 0 ? 'Chưa có bản ghi nào.' : 'Không có bản ghi nào khớp với bộ lọc.'}
+                  {logs.length === 0 ? 'No records found.' : 'No records match the filter.'}
                 </td>
               </tr>
             ) : (
               filteredLogs.map((log) => (
                 <tr key={log.id}>
                   <td style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
-                    {new Date(log.created_at).toLocaleString('vi-VN')}
+                    {new Date(log.created_at).toLocaleString('en-US')}
                   </td>
                   <td style={{ fontWeight: 500 }}>
                     {log.recognized ? `${log.employee_code} — ${log.employee_name}` : '—'}
@@ -230,7 +230,7 @@ const AccessLogs = () => {
                   <td>
                     {log.recognized && (
                       <span style={{ ...BADGE.base, background: 'rgba(16,185,129,0.12)', color: '#059669' }}>
-                        Thành công
+                        Success
                       </span>
                     )}
                   </td>
