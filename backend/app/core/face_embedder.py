@@ -37,7 +37,7 @@ class FaceEmbedder:
             transforms.ToTensor(),
             transforms.Normalize([0.5]*3, [0.5]*3)
         ])
-        print(f"[FaceEmbedder] Dùng: {self.device}")
+        print(f"[FaceEmbedder] Use: {self.device}")
         if self.device.type == "cuda":
             print(f"[FaceEmbedder] GPU: {torch.cuda.get_device_name(0)}")
 
@@ -51,7 +51,7 @@ class FaceEmbedder:
         model.load_state_dict(state_dict)
         model.to(self.device)
         model.eval()
-        print(f"[FaceEmbedder] Loaded model từ {settings.model_path}")
+        print(f"[FaceEmbedder] Loaded model from {settings.model_path}")
         return model
 
     def get_embedding(self, face_array: np.ndarray) -> list[float]:
