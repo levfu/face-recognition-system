@@ -19,7 +19,7 @@ def preprocess_dataset(raw_dir: Path, processed_dir: Path) -> None:
 
     image_paths = sorted([p for p in raw_dir.rglob("*") if p.suffix.lower() in {".jpg", ".jpeg", ".png"}])
     if not image_paths:
-        print("Khong tim thay anh nao trong dataset/raw")
+        print("No images found in dataset/raw.")
         return
 
     total = len(image_paths)
@@ -42,13 +42,13 @@ def preprocess_dataset(raw_dir: Path, processed_dir: Path) -> None:
         success += 1
         print(f"[{idx}/{total}] OK: {rel}")
 
-    print(f"Hoan thanh preprocess. Success: {success}, Failed: {failed}, Total: {total}")
+    print(f"Preprocessing complete. Success: {success}, Failed: {failed}, Total: {total}")
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Preprocess anh tu dataset/raw sang dataset/processed.")
-    parser.add_argument("--raw-dir", default="dataset/raw", help="Thu muc dataset raw")
-    parser.add_argument("--processed-dir", default="dataset/processed", help="Thu muc dataset da can chinh")
+    parser = argparse.ArgumentParser(description="Preprocess images from `dataset/raw` to `dataset/processed`.")
+    parser.add_argument("--raw-dir", default="dataset/raw", help="Folder dataset raw")
+    parser.add_argument("--processed-dir", default="dataset/processed", help="Aligned dataset directory.")
     return parser.parse_args()
 
 
