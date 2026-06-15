@@ -9,7 +9,7 @@ import PageHeader from '../ui/PageHeader';
 
 function parseError(err) {
   const data = err?.response?.data;
-  if (!data) return err.message || 'Lỗi không xác định';
+  if (!data) return err.message || 'Unknown error';
   if (typeof data.detail === 'string') return data.detail;
   if (Array.isArray(data.detail)) return data.detail.map((d) => d.msg).join(', ');
   return JSON.stringify(data);
@@ -19,20 +19,20 @@ function ConflictModal({ empCode, conflictData, onCancel, onOverwrite, disabled 
   return (
     <div className="modal-overlay">
       <div className="modal-box">
-        <div className="modal-title">⚠️ Mã Nhân Viên Đã Tồn Tại</div>
+        <div className="modal-title">⚠️ Employee ID already exists</div>
         <p style={{ fontSize: 14, marginBottom: 12 }}>
-          Mã <strong>{empCode}</strong> hiện đang được dùng cho:
+          `Employee ID <strong>{empCode}</strong> is currently assigned to:`
         </p>
         <ul className="modal-info">
-          <li>Tên: <strong>{conflictData.name}</strong></li>
-          <li>Số ảnh đã đăng ký: <strong>{conflictData.points_count}</strong></li>
+          <li>Name: <strong>{conflictData.name}</strong></li>
+          <li>Number of registered images: <strong>{conflictData.points_count}</strong></li>
         </ul>
         <p className="modal-body">
-          Bạn có muốn <strong>xoá dữ liệu cũ</strong> và đăng ký mới không?
+          Do you want to <strong>delete the old data</strong> and register new data?
         </p>
         <div className="modal-actions">
-          <button className="btn btn-secondary" onClick={onCancel} disabled={disabled}>Huỷ</button>
-          <button className="btn btn-danger"    onClick={onOverwrite} disabled={disabled}>Ghi Đè</button>
+          <button className="btn btn-secondary" onClick={onCancel} disabled={disabled}>Cancel</button>
+          <button className="btn btn-danger"    onClick={onOverwrite} disabled={disabled}>Overwrite</button>
         </div>
       </div>
     </div>
@@ -79,7 +79,7 @@ const Enrollment = () => {
       });
       resetAll();
       setSuccessMessage(
-        `✅ Đã đăng ký thành công ${res.data.points_created} ảnh cho nhân viên ${doneName} (Mã ${doneEmpCode})`
+        `✅ Successfully registered ${res.data.points_created} images for employee ${doneName} (ID ${doneEmpCode}).`
       );
       setTimeout(() => setSuccessMessage(null), 5000);
     } catch (err) {
@@ -97,11 +97,11 @@ const Enrollment = () => {
 
   return (
     <div className="page-sm">
-      <PageHeader icon={UserPlus} title="Đăng Ký Khuôn Mặt Nhân Viên Mới" />
+      <PageHeader icon={UserPlus} title="New Employee Face Registration" />
 
       <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-        <Input label="Mã Nhân Viên" placeholder="VD: NV001" value={empCode} onChange={(e) => setEmpCode(e.target.value)} disabled={submitting} />
-        <Input label="Tên Nhân Viên" placeholder="Họ và tên" value={name} onChange={(e) => setName(e.target.value)} disabled={submitting} />
+        <Input label="Employee ID" placeholder="VD: NV001" value={empCode} onChange={(e) => setEmpCode(e.target.value)} disabled={submitting} />
+        <Input label="Employee Name" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} disabled={submitting} />
 
         <MultiAngleCapture
           key={captureKey}
@@ -116,7 +116,7 @@ const Enrollment = () => {
           disabled={!canSubmit}
           style={{ padding: '12px 20px', fontSize: 15 }}
         >
-          {submitting ? 'Đang xử lý...' : <><Icon name="Save" size={16} /> Lưu Vào Hệ Thống</>}
+          {submitting ? 'Processing...' : <><Icon name="Save" size={16} /> Saved</>}
         </Button>
 
         {errorMessage   && <div className="alert-error">{errorMessage}</div>}
