@@ -43,32 +43,32 @@ function App() {
             <LayoutDashboard size={16} />
             <span>Dashboard</span>
           </NavLink>
-          <NavLink to="/users" className={navClass} title="Quản lý nhân sự">
+          <NavLink to="/users" className={navClass} title="Employee Management">
             <UsersIcon size={16} />
-            <span>Quản Lý Nhân Sự</span>
+            <span>Employee Management</span>
           </NavLink>
-          <NavLink to="/enrollment" className={navClass} title="Đăng ký nhân viên mới">
+          <NavLink to="/enrollment" className={navClass} title="Register New Employee">
             <Plus size={16} />
-            <span>Đăng Ký Mới</span>
+            <span>Register New Employee</span>
           </NavLink>
-          <NavLink to="/logs" className={navClass} title="Lịch sử ra vào">
+          <NavLink to="/logs" className={navClass} title="Check-in/Check-out History">
             <Clock size={16} />
-            <span>Lịch sử</span>
+            <span>Check-in/Check-out History</span>
           </NavLink>
           {isSuperAdmin && (
-            <NavLink to="/settings" className={navClass} title="Cài đặt hệ thống">
+            <NavLink to="/settings" className={navClass} title="Setting">
               <SettingsIcon size={16} />
-              <span>Cài Đặt</span>
+              <span>Setting</span>
             </NavLink>
           )}
-          <NavLink to="/admins" className={navClass} title="Quản lý tài khoản">
+          <NavLink to="/admins" className={navClass} title="Account Management">
             <Lock size={16} />
-            <span>Tài Khoản</span>
+            <span>Account Management</span>
           </NavLink>
           {isSuperAdmin && (
-            <NavLink to="/activity-logs" className={navClass} title="Nhật ký hoạt động quản trị">
+            <NavLink to="/activity-logs" className={navClass} title="Admin Activity Log">
               <ScrollText size={16} strokeWidth={1.5} />
-              <span>Nhật Ký</span>
+              <span>Admin Activity Log</span>
             </NavLink>
           )}
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -77,11 +77,11 @@ function App() {
               onClick={handleLogout}
               className="nav-logout"
               style={{ marginLeft: 0 }}
-              aria-label="Đăng xuất khỏi hệ thống"
-              title="Đăng xuất"
+              aria-label="Logout"
+              title="Logout"
             >
               <LogOut size={16} />
-              <span>Đăng Xuất</span>
+              <span>Logout</span>
             </button>
           </div>
         </nav>
