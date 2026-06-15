@@ -34,19 +34,19 @@ def get_current_admin(
         )
         admin_id = payload.get("sub")
         if not admin_id:
-            raise HTTPException(status_code=401, detail="Token không hợp lệ")
+            raise HTTPException(status_code=401, detail="Invalid token")
     except JWTError:
-        raise HTTPException(status_code=401, detail="Token không hợp lệ")
+        raise HTTPException(status_code=401, detail="Invalid token")
 
     admin = db.query(Admin).filter(Admin.id == admin_id).first()
     if not admin:
-        raise HTTPException(status_code=401, detail="Admin không tồn tại")
+        raise HTTPException(status_code=401, detail="Admin does not exist")
     return admin
 
 
 def require_super_admin(current_admin: Admin = Depends(get_current_admin)):
     if getattr(current_admin, 'role', 'admin') != 'super_admin':
-        raise HTTPException(status_code=403, detail="Yêu cầu quyền Super Admin")
+        raise HTTPException(status_code=403, detail="Super Admin privileges required")
     return current_admin
 
 
@@ -59,7 +59,7 @@ def login(
     if not admin or not admin.verify_password(form.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Sai username hoặc password"
+            detail="Incorrect username or password"
         )
     token = create_access_token({"sub": str(admin.id)})
     return {
@@ -72,8 +72,8 @@ def login(
 
 @router.post("/logout")
 def logout():
-    # JWT stateless — client tự xóa token
-    return {"message": "Đăng xuất thành công"}
+    # JWT is stateless — client must clear the token
+    return {"message": "Logout successful"}
 
 
 @router.get("/me")
@@ -97,11 +97,11 @@ def change_password(
     db: Session = Depends(get_db),
 ):
     if not current_admin.verify_password(body.old_password):
-        raise HTTPException(400, "Mật khẩu hiện tại không đúng")
+        raise HTTPException(400, "Current password is incorrect")
     if len(body.new_password) < 6:
-        raise HTTPException(400, "Mật khẩu mới phải có ít nhất 6 ký tự")
+        raise HTTPException(400, "New password must be at least 6 characters")
     current_admin.set_password(body.new_password)
     db.commit()
     from app.services.audit_log_service import log_action
     log_action(db, str(current_admin.id), "change_password")
-    return {"success": True, "message": "Đổi mật khẩu thành công"}
+    return {"success": True, "message": "Password changed successfully"}
