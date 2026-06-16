@@ -587,7 +587,7 @@ export default function MultiAngleCapture({ onCapturesComplete, onReset, disable
                 color: 'white', cursor: disabled ? 'not-allowed' : 'pointer',
               }}
             >
-              ✅ Ready to Save
+               Ready to Save
             </button>
             <button
               onClick={handleReset}
