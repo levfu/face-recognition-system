@@ -15,8 +15,8 @@ function formatWorkTime(minutes) {
   if (minutes === null || minutes === undefined) return null;
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
-  if (h === 0) return `${m}p`;
-  return `${h}h ${m > 0 ? ` ${m}p` : ''}`.trim();
+  if (h === 0) return `${m}m`;
+  return `${h}h ${m > 0 ? ` ${m}m` : ''}`.trim();
 }
 
 const BADGE = {
@@ -42,7 +42,7 @@ function StatusBadge({ status }) {
     const minutes = status.split(':')[1];
     return (
       <span style={{ ...BADGE.base, background: 'rgba(245,158,11,0.13)', color: '#b45309' }}>
-        Late {minutes}p
+        Late {minutes}m
       </span>
     );
   }
@@ -56,7 +56,7 @@ function StatusBadge({ status }) {
   if (status === 'pending') {
     return (
       <span style={{ ...BADGE.base, background: 'rgba(100,116,139,0.13)', color: '#64748b' }}>
-        Not check in yet
+        Not checked in yet
       </span>
     );
   }
@@ -121,7 +121,7 @@ const Users = () => {
     setDeleting(id);
     try {
       await api.delete(`/api/admin/employees/${id}`, { headers: authHeaders() });
-      showToast(`Xóa "${name}" success!`, 'success');
+      showToast(`Successfully deleted "${name}"!`, 'success');
       fetchUsers(targetDate);
     } catch (error) {
       const msg = error.response?.data?.detail || 'Error while deleting';
@@ -238,11 +238,11 @@ const Users = () => {
                       {deleting === user.id ? (
                         <>
                           <span className="spinner" style={{ width: 14, height: 14 }}></span>
-                          Đang xóa
+                          Deleting
                         </>
                       ) : (
                         <>
-                          <Icon name="Trash2" size={14} /> Xóa
+                          <Icon name="Trash2" size={14} /> Delete
                         </>
                       )}
                     </Button>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 
 function formatTimeShort(isoString) {
-  return new Date(isoString).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' });
+  return new Date(isoString).toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit' });
 }
 
 function capitalizeName(name) {
@@ -116,7 +116,7 @@ export default function RecognitionResult({ result }) {
       <div className={`recognition-card recognition-checkedin ${animClass}`}>
         <div className="result-label" style={{ color: '#0ea5e9', opacity: 1 }}>Already checked in today.</div>
         <div className="result-name" style={{ color: '#0369a1' }}>
-          Xin chào, {capitalizeName(name || '')}!
+          Hello, {capitalizeName(name || '')}!
         </div>
         <div className="result-meta">
           <span>{checkin_message || 'Already checked in today.'}</span>
@@ -158,7 +158,7 @@ export default function RecognitionResult({ result }) {
     <div className={`recognition-card recognition-checkedin ${animClass}`}>
       <div className="result-label" style={{ color: '#0ea5e9', opacity: 1 }}>Already checked in today.</div>
       <div className="result-name" style={{ color: '#0369a1' }}>
-        Xin chào, {capitalizeName(name || '')}!
+        Hello, {capitalizeName(name || '')}!
       </div>
       <div className="result-meta">
         <span>{checkin_message || 'Already checked in today.'}</span>

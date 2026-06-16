@@ -440,7 +440,7 @@ const Dashboard = () => {
       {/* ── modal: check-in by week ── */}
       {modalWeekOpen && (
         <Modal
-          title={`Check-in tuần ${fmt(weekStart)} - ${fmt(addDays(weekStart, 6))} theo nhân viên`}
+          title={`Check-in week ${fmt(weekStart)} - ${fmt(addDays(weekStart, 6))} by employee`}
           onClose={() => setModalWeekOpen(false)}
         >
           <ModalTable
@@ -472,7 +472,7 @@ const Dashboard = () => {
                 const mins = v?.startsWith('late:') ? v.split(':')[1] : '?';
                 return (
                   <span style={{ color: '#b45309', fontWeight: 700, fontSize: 13 }}>
-                    +{mins}p
+                    +{mins}m
                   </span>
                 );
               }},

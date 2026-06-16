@@ -100,7 +100,7 @@ const Enrollment = () => {
       <PageHeader icon={UserPlus} title="New Employee Face Registration" />
 
       <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-        <Input label="Employee ID" placeholder="VD: NV001" value={empCode} onChange={(e) => setEmpCode(e.target.value)} disabled={submitting} />
+        <Input label="Employee ID" placeholder="Ex: NV001" value={empCode} onChange={(e) => setEmpCode(e.target.value)} disabled={submitting} />
         <Input label="Employee Name" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} disabled={submitting} />
 
         <MultiAngleCapture
