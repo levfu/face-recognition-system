@@ -170,7 +170,7 @@ docker compose logs -f
 
 > Change the password immediately after deployment to ensure security.
 
-> ⚠️ **REQUIRED**: Change `JWT_SECRET` (in `.env`) and the admin password before exposing the system publicly.
+> **REQUIRED**: Change `JWT_SECRET` (in `.env`) and the admin password before exposing the system publicly.
 > The default `admin / admin123` is for **local development only**.
 
 ### Initialize / Reset Admin Account
@@ -213,11 +213,12 @@ To customize the configuration, copy `.env.example` to `.env` and adjust the fol
 │   ├── tests/              # Pytest test suite
 │   └── Dockerfile
 ├── cloudflare/             # Internet deployment via Cloudflare Tunnel
+├── dataset                 # Dataset's link
 ├── frontend-admin/         # Admin interface (React + Vite)
 ├── frontend-user/          # Kiosk interface (React + Vite)
 ├── models/                 # AI weights (best_model.pth, face_landmarker.task)
 ├── nginx/                  # Reverse proxy configuration
-├── scripts/                # Backup utilities + offline data prep
+├── scripts/                # Backup utilities + code Kaggle
 ├── secrets/                # Service account JSON (gitignored)
 ├── docker-compose.yml      # Standard deployment config (CPU)
 ├── docker-compose.gpu.yml  # Optional GPU override layer
@@ -283,7 +284,7 @@ Tunnel credentials written to /root/.cloudflared/<TUNNEL_ID>.json
 Created tunnel face-recognition with id <TUNNEL_ID>
 ```
 
-> ⚠️ **Save the `TUNNEL_ID`** — you will need it in the next steps.
+> **Save the `TUNNEL_ID`** — you will need it in the next steps.
 
 ---
 
@@ -308,7 +309,7 @@ ingress:
   - service: http_status:404
 ```
 
-> 💡 Both hostnames point to `nginx:80`. Nginx routes traffic based on **path** (`/admin/` vs `/`).
+> Both hostnames point to `nginx:80`. Nginx routes traffic based on **path** (`/admin/` vs `/`).
 
 ---
 
@@ -321,7 +322,7 @@ Go to **Cloudflare dashboard → DNS → Add record** and add 2 CNAME entries:
 | CNAME | face | `<TUNNEL_ID>.cfargotunnel.com` |  ON (orange) |
 | CNAME | admin.face | `<TUNNEL_ID>.cfargotunnel.com` |  ON (orange) |
 
-> ⚠️ Proxy must be **ON** — required for automatic SSL.
+> Proxy must be **ON** — required for automatic SSL.
 
 ---
 
@@ -341,7 +342,7 @@ cloudflared:
   restart: unless-stopped
 ```
 
-> ⚠️ The `~/.cloudflared/` directory on the host must contain the `<TUNNEL_ID>.json` file created in Step 2. **Do not commit this file to GitHub.**
+> The `~/.cloudflared/` directory on the host must contain the `<TUNNEL_ID>.json` file created in Step 2. **Do not commit this file to GitHub.**
 
 ---
 
@@ -402,7 +403,7 @@ The backup system is built into the backend (`backup_service.py` + `gdrive_uploa
 | Qdrant | `qdrant_face_embeddings.snapshot` | Full collection snapshot |
 | MinIO | `minio/face-images/`, `minio/snapshots/` | **Off** by default |
 
-> ⚠️ **MinIO backup is OFF by default** (`BACKUP_INCLUDE_MINIO=false`). Original images already live in the Docker volume `minio_data` — backing up the Docker volume is sufficient. Enable only when you need to copy images elsewhere.
+> **MinIO backup is OFF by default** (`BACKUP_INCLUDE_MINIO=false`). Original images already live in the Docker volume `minio_data` — backing up the Docker volume is sufficient. Enable only when you need to copy images elsewhere.
 
 ---
 
@@ -508,7 +509,7 @@ GOOGLE_DRIVE_CREDENTIALS=./secrets/gdrive-service-account.json
 GOOGLE_DRIVE_FOLDER_ID=<Shared_Drive_ID>
 ```
 
-> ⚠️ Using a Service Account with a **personal** Google Drive will result in a `storageQuotaExceeded` error (quota = 0). Use a Shared Drive or switch to OAuth instead.
+> Using a Service Account with a **personal** Google Drive will result in a `storageQuotaExceeded` error (quota = 0). Use a Shared Drive or switch to OAuth instead.
 
 ---
 
