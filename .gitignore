@@ -37,8 +37,6 @@ _inspect_pth.py
 celerybeat-schedule
 .deepface
 
-# Dataset 
-dataset/
 
 # Data nhạy cảm
 .env
